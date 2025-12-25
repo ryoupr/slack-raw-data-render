@@ -915,6 +915,34 @@
   }
 
   /**
+   * Wrapper function for safe Markdown parsing with error handling (async version)
+   * @param {string} content - The content to parse
+   * @returns {Promise<Object>} Result object with success status and content/error
+   */
+  async function safeParseMarkdownAsync(content) {
+    try {
+      // Yield control before parsing
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const htmlContent = parseMarkdown(content);
+      return {
+        success: true,
+        html: htmlContent,
+        error: null
+      };
+    } catch (error) {
+      // Use the comprehensive error handler
+      const errorResult = handleParsingError(error, content);
+      return {
+        success: false,
+        html: null,
+        error: error.message,
+        fallbackHTML: errorResult.styledHTML
+      };
+    }
+  }
+
+  /**
    * Wrapper function for safe Markdown parsing with error handling
    * @param {string} content - The content to parse
    * @returns {Object} Result object with success status and content/error
@@ -962,11 +990,86 @@
   }
 
   /**
-   * Complete Markdown processing pipeline
+   * Complete Markdown processing pipeline (async version)
+   * @param {string} markdownContent - The raw Markdown content
+   * @param {Function} progressCallback - Optional callback for progress updates
+   * @returns {Promise<Object>} Processing result with HTML and metadata
+   */
+  async function processMarkdownContent(markdownContent, progressCallback = null) {
+    // Yield control to allow UI updates
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    if (progressCallback) {
+      progressCallback({ stage: 'parsing', progress: 0.2 });
+    }
+    
+    const result = await safeParseMarkdownAsync(markdownContent);
+    
+    if (!result.success) {
+      return {
+        success: false,
+        html: null,
+        styledHTML: result.fallbackHTML || null,
+        error: result.error,
+        fallbackUsed: !!result.fallbackHTML
+      };
+    }
+    
+    // Yield control after parsing
+    await new Promise(resolve => setTimeout(resolve, 0));
+    
+    if (progressCallback) {
+      progressCallback({ stage: 'styling', progress: 0.7 });
+    }
+    
+    try {
+      const styledHTML = generateStyledHTML(result.html);
+      
+      if (progressCallback) {
+        progressCallback({ stage: 'complete', progress: 1.0 });
+      }
+      
+      return {
+        success: true,
+        html: result.html,
+        styledHTML: styledHTML,
+        error: null,
+        fallbackUsed: false
+      };
+    } catch (error) {
+      logError(error, 'HTML styling generation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM, {
+        htmlLength: result.html?.length || 0
+      });
+      
+      // Fallback: return unstyled HTML wrapped in basic container
+      const fallbackHTML = `
+        <div class="slack-markdown-renderer-content error-fallback">
+          <div class="error-notice">
+            <p><strong>⚠️ Styling failed</strong></p>
+            <p>Displaying unstyled content.</p>
+          </div>
+          <div class="unstyled-content">
+            ${result.html}
+          </div>
+        </div>
+      `;
+      
+      return {
+        success: false,
+        html: result.html,
+        styledHTML: fallbackHTML,
+        error: `Failed to generate styled HTML: ${error.message}`,
+        fallbackUsed: true
+      };
+    }
+  }
+
+  /**
+   * Synchronous version of processMarkdownContent for backward compatibility
    * @param {string} markdownContent - The raw Markdown content
    * @returns {Object} Processing result with HTML and metadata
    */
-  function processMarkdownContent(markdownContent) {
+  function processMarkdownContentSync(markdownContent) {
     const result = safeParseMarkdown(markdownContent);
     
     if (!result.success) {
@@ -1013,6 +1116,178 @@
         error: `Failed to generate styled HTML: ${error.message}`,
         fallbackUsed: true
       };
+    }
+  }
+
+  /**
+   * Loading Indicator Functions
+   */
+  
+  let loadingIndicator = null;
+  let loadingTimeout = null;
+
+  /**
+   * Creates a loading indicator element
+   * @param {string} message - Loading message to display
+   * @returns {HTMLElement} The loading indicator element
+   */
+  function createLoadingIndicator(message = 'Processing Markdown...') {
+    const indicator = document.createElement('div');
+    indicator.className = 'slack-markdown-loading-indicator';
+    indicator.innerHTML = `
+      <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-message">${message}</div>
+        <div class="loading-progress">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    return indicator;
+  }
+
+  /**
+   * Shows a loading indicator on the page
+   * @param {string} message - Loading message to display
+   * @param {number} timeout - Auto-hide timeout in milliseconds (0 = no timeout)
+   * @returns {HTMLElement} The loading indicator element
+   */
+  function showLoadingIndicator(message = 'Processing Markdown...', timeout = 10000) {
+    // Remove existing indicator if present
+    hideLoadingIndicator();
+    
+    try {
+      loadingIndicator = createLoadingIndicator(message);
+      
+      // Find a good place to insert the indicator
+      const container = findContentContainer();
+      if (container && container.parentNode) {
+        container.parentNode.insertBefore(loadingIndicator, container);
+      } else {
+        // Fallback: add to body
+        document.body.appendChild(loadingIndicator);
+      }
+      
+      // Set auto-hide timeout if specified
+      if (timeout > 0) {
+        loadingTimeout = setTimeout(() => {
+          hideLoadingIndicator();
+          console.warn('Slack Markdown Renderer: Loading indicator auto-hidden due to timeout');
+        }, timeout);
+      }
+      
+      console.log('Slack Markdown Renderer: Loading indicator shown');
+      return loadingIndicator;
+    } catch (error) {
+      logError(error, 'Loading indicator creation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
+      return null;
+    }
+  }
+
+  /**
+   * Updates the loading indicator progress and message
+   * @param {Object} progress - Progress information
+   * @param {string} progress.stage - Current processing stage
+   * @param {number} progress.progress - Progress value (0-1)
+   * @param {string} progress.message - Optional custom message
+   */
+  function updateLoadingIndicator(progress) {
+    if (!loadingIndicator) {
+      return;
+    }
+    
+    try {
+      const messageElement = loadingIndicator.querySelector('.loading-message');
+      const progressFill = loadingIndicator.querySelector('.progress-fill');
+      
+      // Update message based on stage
+      if (progress.message) {
+        messageElement.textContent = progress.message;
+      } else {
+        const stageMessages = {
+          'parsing': 'Parsing Markdown...',
+          'styling': 'Applying styles...',
+          'highlighting': 'Adding syntax highlighting...',
+          'complete': 'Complete!'
+        };
+        messageElement.textContent = stageMessages[progress.stage] || 'Processing...';
+      }
+      
+      // Update progress bar
+      if (typeof progress.progress === 'number') {
+        const percentage = Math.min(100, Math.max(0, progress.progress * 100));
+        progressFill.style.width = `${percentage}%`;
+      }
+      
+    } catch (error) {
+      logError(error, 'Loading indicator update', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
+    }
+  }
+
+  /**
+   * Hides the loading indicator
+   */
+  function hideLoadingIndicator() {
+    if (loadingTimeout) {
+      clearTimeout(loadingTimeout);
+      loadingTimeout = null;
+    }
+    
+    if (loadingIndicator && loadingIndicator.parentNode) {
+      try {
+        loadingIndicator.parentNode.removeChild(loadingIndicator);
+        console.log('Slack Markdown Renderer: Loading indicator hidden');
+      } catch (error) {
+        logError(error, 'Loading indicator removal', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
+      }
+    }
+    
+    loadingIndicator = null;
+  }
+
+  /**
+   * Shows loading indicator for long operations
+   * @param {Promise} operation - The async operation to monitor
+   * @param {string} message - Loading message
+   * @param {number} showDelay - Delay before showing indicator (ms)
+   * @returns {Promise} The operation result
+   */
+  async function withLoadingIndicator(operation, message = 'Processing...', showDelay = 500) {
+    let showTimeout;
+    let indicatorShown = false;
+    
+    // Show indicator after delay to avoid flashing for quick operations
+    showTimeout = setTimeout(() => {
+      showLoadingIndicator(message);
+      indicatorShown = true;
+    }, showDelay);
+    
+    try {
+      const result = await operation;
+      
+      // Clear the show timeout if operation completed quickly
+      if (showTimeout) {
+        clearTimeout(showTimeout);
+      }
+      
+      // Hide indicator if it was shown
+      if (indicatorShown) {
+        hideLoadingIndicator();
+      }
+      
+      return result;
+    } catch (error) {
+      // Clear timeout and hide indicator on error
+      if (showTimeout) {
+        clearTimeout(showTimeout);
+      }
+      if (indicatorShown) {
+        hideLoadingIndicator();
+      }
+      throw error;
     }
   }
 
@@ -1202,11 +1477,52 @@
   }
 
   /**
-   * Complete content replacement pipeline
+   * Complete content replacement pipeline (async version)
+   * @param {string} styledHTML - The styled HTML to display
+   * @param {Function} progressCallback - Optional progress callback
+   * @returns {Promise<Object>} Replacement result with success status
+   */
+  async function performContentReplacement(styledHTML, progressCallback = null) {
+    try {
+      // Yield control before DOM manipulation
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      if (progressCallback) {
+        progressCallback({ stage: 'replacing', progress: 0.8 });
+      }
+      
+      const success = replaceContentWithHTML(styledHTML);
+      
+      if (progressCallback) {
+        progressCallback({ stage: 'complete', progress: 1.0 });
+      }
+      
+      return {
+        success: success,
+        state: getContentState(),
+        error: null,
+        fallbackUsed: false
+      };
+    } catch (error) {
+      // Try to handle the error gracefully
+      const errorResult = handleDOMError(error, currentContentContainer || findContentContainer());
+      
+      return {
+        success: false,
+        state: getContentState(),
+        error: error.message,
+        fallbackUsed: errorResult.fallbackUsed,
+        notificationShown: errorResult.notificationShown
+      };
+    }
+  }
+
+  /**
+   * Synchronous version of performContentReplacement for backward compatibility
    * @param {string} styledHTML - The styled HTML to display
    * @returns {Object} Replacement result with success status
    */
-  function performContentReplacement(styledHTML) {
+  function performContentReplacementSync(styledHTML) {
     try {
       const success = replaceContentWithHTML(styledHTML);
       return {
@@ -1372,10 +1688,67 @@
   }
 
   /**
-   * Switches to the rendered Markdown view
+   * Switches to the rendered Markdown view (async version)
+   * @returns {Promise<boolean>} True if switch was successful
+   */
+  async function switchToRenderedView() {
+    if (!processedMarkdownHTML) {
+      console.error('Slack Markdown Renderer: No processed HTML available for rendered view');
+      return false;
+    }
+    
+    try {
+      // Show loading indicator for complex operations
+      const shouldShowLoading = processedMarkdownHTML.length > 50000;
+      
+      if (shouldShowLoading) {
+        showLoadingIndicator('Switching to rendered view...', 5000);
+      }
+      
+      const success = replaceContentWithHTML(processedMarkdownHTML);
+      if (success) {
+        // Re-apply styling and syntax highlighting asynchronously
+        await new Promise(resolve => {
+          setTimeout(() => {
+            safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
+            safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
+            resolve();
+          }, 0);
+        });
+        
+        const container = currentContentContainer || findContentContainer();
+        if (container) {
+          await applySyntaxHighlighting(container);
+        }
+        
+        updateToggleButton('rendered');
+        saveSessionPreference('rendered');
+        console.log('Slack Markdown Renderer: Switched to rendered view');
+        
+        if (shouldShowLoading) {
+          hideLoadingIndicator();
+        }
+        
+        return true;
+      }
+      
+      if (shouldShowLoading) {
+        hideLoadingIndicator();
+      }
+      
+      return false;
+    } catch (error) {
+      hideLoadingIndicator();
+      console.error('Slack Markdown Renderer: Error switching to rendered view:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Synchronous version of switchToRenderedView for backward compatibility
    * @returns {boolean} True if switch was successful
    */
-  function switchToRenderedView() {
+  function switchToRenderedViewSync() {
     if (!processedMarkdownHTML) {
       console.error('Slack Markdown Renderer: No processed HTML available for rendered view');
       return false;
@@ -1385,12 +1758,12 @@
       const success = replaceContentWithHTML(processedMarkdownHTML);
       if (success) {
         // Re-apply styling and syntax highlighting
-        applyBaseStyles();
-        applyTypographyEnhancements();
+        safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
+        safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
         
         const container = currentContentContainer || findContentContainer();
         if (container) {
-          applySyntaxHighlighting(container);
+          applySyntaxHighlightingSync(container);
         }
         
         updateToggleButton('rendered');
@@ -1406,12 +1779,24 @@
   }
 
   /**
-   * Toggles between RAW and rendered views
+   * Toggles between RAW and rendered views (async version)
+   * @returns {Promise<boolean>} True if toggle was successful
+   */
+  async function toggleView() {
+    if (currentView === 'raw') {
+      return await switchToRenderedView();
+    } else {
+      return switchToRawView();
+    }
+  }
+
+  /**
+   * Synchronous version of toggleView for backward compatibility
    * @returns {boolean} True if toggle was successful
    */
-  function toggleView() {
+  function toggleViewSync() {
     if (currentView === 'raw') {
-      return switchToRenderedView();
+      return switchToRenderedViewSync();
     } else {
       return switchToRawView();
     }
@@ -1495,11 +1880,109 @@
   }
 
   /**
-   * Applies syntax highlighting to code blocks
+   * Applies syntax highlighting to code blocks (async version)
+   * @param {HTMLElement} container - Container with rendered HTML
+   * @param {Function} progressCallback - Optional progress callback
+   * @returns {Promise<boolean>} True if highlighting was successfully applied
+   */
+  async function applySyntaxHighlighting(container, progressCallback = null) {
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container provided for syntax highlighting');
+      return false;
+    }
+    
+    if (typeof Prism === 'undefined') {
+      console.warn('Slack Markdown Renderer: Prism.js not available for syntax highlighting');
+      return false;
+    }
+    
+    try {
+      // Configure Prism if not already done
+      configurePrismOptions();
+      
+      // Find all code blocks
+      const codeBlocks = container.querySelectorAll('pre code');
+      let highlightedCount = 0;
+      
+      if (progressCallback) {
+        progressCallback({ stage: 'highlighting', progress: 0.9 });
+      }
+      
+      // Process code blocks in batches to avoid blocking
+      const batchSize = 5;
+      for (let i = 0; i < codeBlocks.length; i += batchSize) {
+        const batch = Array.from(codeBlocks).slice(i, i + batchSize);
+        
+        // Process batch
+        batch.forEach((codeElement, index) => {
+          try {
+            const preElement = codeElement.parentElement;
+            const codeText = codeElement.textContent || '';
+            
+            if (codeText.trim().length === 0) {
+              return; // Skip empty code blocks
+            }
+            
+            // Detect language
+            let language = 'text';
+            
+            // Check if language is specified in class name
+            const classMatch = codeElement.className.match(/language-(\w+)/);
+            if (classMatch) {
+              language = classMatch[1].toLowerCase();
+            } else {
+              // Try to detect language from content
+              language = detectCodeLanguage(codeText);
+            }
+            
+            // Ensure we have the language in Prism
+            if (!Prism.languages[language]) {
+              language = 'text';
+            }
+            
+            // Apply language class
+            codeElement.className = `language-${language}`;
+            preElement.className = `language-${language}`;
+            
+            // Add language label
+            preElement.setAttribute('data-language', language);
+            
+            // Apply syntax highlighting
+            if (language !== 'text' && Prism.languages[language]) {
+              const highlightedCode = Prism.highlight(codeText, Prism.languages[language], language);
+              codeElement.innerHTML = highlightedCode;
+              highlightedCount++;
+            }
+            
+            // Add copy button
+            addCopyButtonToCodeBlock(preElement, codeText);
+            
+          } catch (error) {
+            console.warn(`Slack Markdown Renderer: Error highlighting code block ${i + index}:`, error);
+          }
+        });
+        
+        // Yield control after each batch
+        if (i + batchSize < codeBlocks.length) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+      
+      console.log(`Slack Markdown Renderer: Applied syntax highlighting to ${highlightedCount} code blocks`);
+      return highlightedCount > 0;
+      
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error applying syntax highlighting:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Synchronous version of applySyntaxHighlighting for backward compatibility
    * @param {HTMLElement} container - Container with rendered HTML
    * @returns {boolean} True if highlighting was successfully applied
    */
-  function applySyntaxHighlighting(container) {
+  function applySyntaxHighlightingSync(container) {
     if (!container) {
       console.warn('Slack Markdown Renderer: No container provided for syntax highlighting');
       return false;
@@ -1994,12 +2477,43 @@
   }
 
   /**
-   * Handles toggle button click events
+   * Handles toggle button click events (async version)
    */
-  function handleToggleClick() {
+  async function handleToggleClick() {
     console.log('Slack Markdown Renderer: Toggle button clicked, current view:', currentView);
     
-    const success = toggleView();
+    // Disable button during processing to prevent multiple clicks
+    if (toggleButton) {
+      toggleButton.disabled = true;
+      toggleButton.style.opacity = '0.6';
+      toggleButton.style.cursor = 'not-allowed';
+    }
+    
+    try {
+      const success = await toggleView();
+      if (!success) {
+        console.error('Slack Markdown Renderer: Failed to toggle view');
+        // Could show user notification here in the future
+      }
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error during view toggle:', error);
+    } finally {
+      // Re-enable button
+      if (toggleButton) {
+        toggleButton.disabled = false;
+        toggleButton.style.opacity = '1';
+        toggleButton.style.cursor = 'pointer';
+      }
+    }
+  }
+
+  /**
+   * Synchronous version of handleToggleClick for backward compatibility
+   */
+  function handleToggleClickSync() {
+    console.log('Slack Markdown Renderer: Toggle button clicked, current view:', currentView);
+    
+    const success = toggleViewSync();
     if (!success) {
       console.error('Slack Markdown Renderer: Failed to toggle view');
       // Could show user notification here in the future
@@ -2019,33 +2533,34 @@
     };
   }
 
-  // Initialize URL detection with comprehensive error handling
-  try {
-    if (isSlackRawPage()) {
-      console.log('Slack Markdown Renderer: Detected Slack RAW file page');
-      
-      // Perform content analysis with error handling
-      const content = safeExecute(
-        () => extractTextContent(),
-        'Content extraction',
-        ERROR_CATEGORIES.DOM,
-        ''
-      );
-      
-      const fileExtension = safeExecute(
-        () => extractFileExtension(),
-        'File extension extraction',
-        ERROR_CATEGORIES.VALIDATION,
-        null
-      );
-      
+  /**
+   * Main async processing pipeline for Markdown content
+   * @param {string} content - The content to process
+   * @param {string} fileExtension - File extension if available
+   * @returns {Promise<Object>} Processing result
+   */
+  async function processContentAsync(content, fileExtension = null) {
+    // Show loading indicator for operations that might take time
+    const contentLength = content?.length || 0;
+    const shouldShowLoading = contentLength > 10000; // Show for large content
+    
+    if (shouldShowLoading) {
+      showLoadingIndicator('Analyzing content...', 15000);
+    }
+    
+    try {
       // Use enhanced content handling to determine processing strategy
-      const contentHandling = safeExecute(
-        () => handleNonMarkdownContent(content, fileExtension),
-        'Content handling decision',
-        ERROR_CATEGORIES.VALIDATION,
-        { action: 'preserve_original', reason: 'Analysis failed' }
-      );
+      const contentHandling = await new Promise(resolve => {
+        // Yield control before analysis
+        setTimeout(() => {
+          const result = handleNonMarkdownContent(content, fileExtension);
+          resolve(result);
+        }, 0);
+      });
+      
+      if (shouldShowLoading) {
+        updateLoadingIndicator({ stage: 'analyzing', progress: 0.1 });
+      }
       
       console.log('Slack Markdown Renderer: Content handling decision:', {
         action: contentHandling.action,
@@ -2057,13 +2572,9 @@
       if (contentHandling.action === 'process_as_markdown') {
         console.log('Slack Markdown Renderer: Processing content as Markdown');
         
-        // Process the Markdown content with error handling
-        const processingResult = safeExecute(
-          () => processMarkdownContent(content),
-          'Markdown processing',
-          ERROR_CATEGORIES.PARSING,
-          { success: false, error: 'Processing failed', styledHTML: null }
-        );
+        // Process the Markdown content with progress tracking
+        const progressCallback = shouldShowLoading ? updateLoadingIndicator : null;
+        const processingResult = await processMarkdownContent(content, progressCallback);
         
         if (processingResult.success || processingResult.fallbackUsed) {
           console.log('Slack Markdown Renderer: Markdown processing completed', {
@@ -2075,11 +2586,9 @@
           processedMarkdownHTML = processingResult.styledHTML;
           
           // Replace content with rendered HTML
-          const replacementResult = safeExecute(
-            () => performContentReplacement(processingResult.styledHTML),
-            'Content replacement',
-            ERROR_CATEGORIES.DOM,
-            { success: false, error: 'Replacement failed' }
+          const replacementResult = await performContentReplacement(
+            processingResult.styledHTML, 
+            progressCallback
           );
           
           if (replacementResult.success || replacementResult.fallbackUsed) {
@@ -2090,8 +2599,13 @@
             });
             
             // Apply enhanced styling with error handling
-            safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
-            safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
+            await new Promise(resolve => {
+              setTimeout(() => {
+                safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
+                safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
+                resolve();
+              }, 0);
+            });
             
             // Load and apply saved theme preference
             const savedTheme = safeExecute(
@@ -2105,10 +2619,10 @@
             // Apply default color scheme
             safeExecute(() => applyColorScheme('default'), 'Color scheme application', ERROR_CATEGORIES.DOM);
             
-            // Apply syntax highlighting
+            // Apply syntax highlighting asynchronously
             const container = currentContentContainer || findContentContainer();
             if (container) {
-              safeExecute(() => applySyntaxHighlighting(container), 'Syntax highlighting', ERROR_CATEGORIES.PARSING);
+              await applySyntaxHighlighting(container, progressCallback);
               safeExecute(() => setSyntaxHighlightingTheme('default'), 'Syntax highlighting theme', ERROR_CATEGORIES.DOM);
             }
             
@@ -2145,13 +2659,17 @@
               console.error('Slack Markdown Renderer: Failed to create toggle button');
               logError(new Error('Toggle button creation failed'), 'Toggle button setup', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM);
             }
+            
+            return { success: true, processed: true };
           } else {
             console.error('Slack Markdown Renderer: Content replacement failed:', replacementResult.error);
             logError(new Error(replacementResult.error), 'Content replacement pipeline', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.HIGH);
+            return { success: false, error: replacementResult.error };
           }
         } else {
           console.error('Slack Markdown Renderer: Markdown processing failed:', processingResult.error);
           logError(new Error(processingResult.error), 'Markdown processing pipeline', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.HIGH);
+          return { success: false, error: processingResult.error };
         }
       } else {
         // Content should be preserved as-is
@@ -2173,17 +2691,51 @@
         
         // No modification to the page - extension remains inactive for this content
         console.log('Slack Markdown Renderer: Extension inactive for this content type');
+        return { success: true, processed: false, reason: contentHandling.reason };
       }
-    } else {
-      console.log('Slack Markdown Renderer: Not a Slack RAW file page, extension inactive');
+    } finally {
+      // Always hide loading indicator
+      if (shouldShowLoading) {
+        hideLoadingIndicator();
+      }
     }
-  } catch (error) {
-    // Catch-all error handler for initialization
-    logError(error, 'Extension initialization', ERROR_CATEGORIES.UNKNOWN, ERROR_SEVERITY.CRITICAL, {
-      url: window.location.href,
-      timestamp: new Date().toISOString()
-    });
-    console.error('Slack Markdown Renderer: Critical initialization error:', error);
   }
+
+  // Initialize URL detection with comprehensive error handling (async version)
+  (async function initializeExtension() {
+    try {
+      if (isSlackRawPage()) {
+        console.log('Slack Markdown Renderer: Detected Slack RAW file page');
+        
+        // Perform content analysis with error handling
+        const content = safeExecute(
+          () => extractTextContent(),
+          'Content extraction',
+          ERROR_CATEGORIES.DOM,
+          ''
+        );
+        
+        const fileExtension = safeExecute(
+          () => extractFileExtension(),
+          'File extension extraction',
+          ERROR_CATEGORIES.VALIDATION,
+          null
+        );
+        
+        // Process content asynchronously
+        await processContentAsync(content, fileExtension);
+        
+      } else {
+        console.log('Slack Markdown Renderer: Not a Slack RAW file page, extension inactive');
+      }
+    } catch (error) {
+      // Catch-all error handler for initialization
+      logError(error, 'Extension initialization', ERROR_CATEGORIES.UNKNOWN, ERROR_SEVERITY.CRITICAL, {
+        url: window.location.href,
+        timestamp: new Date().toISOString()
+      });
+      console.error('Slack Markdown Renderer: Critical initialization error:', error);
+    }
+  })();
   
 })();

@@ -1117,6 +1117,259 @@
   }
 }
 
+/* Loading Indicator Styles */
+.slack-markdown-loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10002;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e1e4e8;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  padding: 24px 32px;
+  min-width: 280px;
+  text-align: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e1e4e8;
+  border-top: 3px solid #4a154b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-message {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.loading-progress {
+  width: 100%;
+  max-width: 200px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background-color: #e1e4e8;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a154b, #611f69);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Loading indicator responsive design */
+@media (max-width: 768px) {
+  .slack-markdown-loading-indicator {
+    min-width: 240px;
+    padding: 20px 24px;
+  }
+  
+  .loading-spinner {
+    width: 28px;
+    height: 28px;
+    border-width: 2px;
+  }
+  
+  .loading-message {
+    font-size: 14px;
+  }
+  
+  .progress-bar {
+    height: 4px;
+  }
+}
+
+/* Loading indicator dark theme */
+.slack-markdown-loading-indicator.dark-theme {
+  background-color: rgba(45, 55, 72, 0.95);
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.dark-theme .loading-spinner {
+  border-color: #4a5568;
+  border-top-color: #9f7aea;
+}
+
+.dark-theme .loading-message {
+  color: #e2e8f0;
+}
+
+.dark-theme .progress-bar {
+  background-color: #4a5568;
+}
+
+.dark-theme .progress-fill {
+  background: linear-gradient(90deg, #9f7aea, #b794f6);
+}
+
+/* Loading indicator accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+    border-top-color: #4a154b;
+  }
+  
+  .progress-fill::after {
+    animation: none;
+  }
+  
+  @keyframes spin {
+    0%, 100% { transform: rotate(0deg); }
+  }
+  
+  @keyframes shimmer {
+    0%, 100% { transform: translateX(0); }
+  }
+}
+
+/* High contrast loading indicator */
+@media (prefers-contrast: high) {
+  .slack-markdown-loading-indicator {
+    background-color: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  
+  .loading-spinner {
+    border-color: #cccccc;
+    border-top-color: #000000;
+    border-width: 3px;
+  }
+  
+  .loading-message {
+    color: #000000;
+    font-weight: 600;
+  }
+  
+  .progress-bar {
+    background-color: #cccccc;
+    border: 1px solid #000000;
+  }
+  
+  .progress-fill {
+    background: #000000;
+  }
+}
+
+/* Loading indicator focus management */
+.slack-markdown-loading-indicator:focus-within {
+  outline: 2px solid #4a154b;
+  outline-offset: 2px;
+}
+
+/* Loading states for different operations */
+.slack-markdown-loading-indicator.parsing .loading-spinner {
+  border-top-color: #007a5a;
+}
+
+.slack-markdown-loading-indicator.parsing .progress-fill {
+  background: linear-gradient(90deg, #007a5a, #148567);
+}
+
+.slack-markdown-loading-indicator.styling .loading-spinner {
+  border-top-color: #e36209;
+}
+
+.slack-markdown-loading-indicator.styling .progress-fill {
+  background: linear-gradient(90deg, #e36209, #f56500);
+}
+
+.slack-markdown-loading-indicator.highlighting .loading-spinner {
+  border-top-color: #6f42c1;
+}
+
+.slack-markdown-loading-indicator.highlighting .progress-fill {
+  background: linear-gradient(90deg, #6f42c1, #8a63d2);
+}
+
+.slack-markdown-loading-indicator.complete .loading-spinner {
+  border-top-color: #28a745;
+  animation: none;
+}
+
+.slack-markdown-loading-indicator.complete .progress-fill {
+  background: linear-gradient(90deg, #28a745, #34ce57);
+}
+
+/* Loading indicator animation entrance */
+.slack-markdown-loading-indicator {
+  animation: fadeInScale 0.3s ease-out;
+}
+
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Loading indicator exit animation */
+.slack-markdown-loading-indicator.hiding {
+  animation: fadeOutScale 0.2s ease-in forwards;
+}
+
+@keyframes fadeOutScale {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+}
+
 /* Content type specific styling hints */
 .slack-markdown-renderer-content[data-content-type="json"] .original-content,
 .slack-markdown-renderer-content[data-content-type="xml"] .original-content,

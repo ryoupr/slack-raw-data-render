@@ -111,14 +111,14 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Test background color setting
     - _Requirements: 5.1, 5.2, 5.3_
 
-- [ ] 7. Implement error handling and edge cases
-  - [ ] 7.1 Add comprehensive error handling
+- [x] 7. Implement error handling and edge cases
+  - [x] 7.1 Add comprehensive error handling
     - Implement error handlers for parsing, DOM, and network errors
     - Add fallback mechanisms for failed operations
     - Create error logging system
     - _Requirements: 6.4, 6.5_
 
-  - [ ] 7.2 Implement non-Markdown content handling
+  - [x] 7.2 Implement non-Markdown content handling
     - Add logic to preserve non-Markdown content unchanged
     - Handle mixed content appropriately
     - _Requirements: 4.4, 4.5_
@@ -131,8 +131,8 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 7: Non-Markdown Content Preservation**
     - **Validates: Requirements 4.4**
 
-- [ ] 8. Implement performance optimizations
-  - [ ] 8.1 Add non-blocking processing
+- [-] 8. Implement performance optimizations
+  - [x] 8.1 Add non-blocking processing
     - Implement asynchronous processing for large content
     - Add loading indicators for long operations
     - _Requirements: 7.3, 7.5_
