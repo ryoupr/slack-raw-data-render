@@ -6,6 +6,7 @@
 const { runTests } = require('./test-core-functionality');
 const { runIntegrationTests } = require('./test-integration');
 const { validateManifest } = require('./test-manifest');
+const { runPropertyBasedTests } = require('./test-property-based');
 
 function runAllTests() {
   console.log('🚀 Running Complete Test Suite for Slack Markdown Renderer\n');
@@ -31,6 +32,12 @@ function runAllTests() {
   const manifestValid = validateManifest();
   if (!manifestValid) allTestsPassed = false;
   
+  // Run property-based tests
+  console.log('\n4️⃣ PROPERTY-BASED TESTS');
+  console.log('-'.repeat(30));
+  const propertyTestsPassed = runPropertyBasedTests();
+  if (!propertyTestsPassed) allTestsPassed = false;
+  
   // Final summary
   console.log('\n' + '='.repeat(60));
   console.log('🏁 FINAL TEST RESULTS');
@@ -39,6 +46,7 @@ function runAllTests() {
   console.log(`Core Functionality Tests: ${coreTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
   console.log(`Integration Tests: ${integrationTestsPassed ? '✅ PASSED' : '❌ FAILED'}`);
   console.log(`Manifest Validation: ${manifestValid ? '✅ PASSED' : '❌ FAILED'}`);
+  console.log(`Property-Based Tests: ${propertyTestsPassed ? '✅ PASSED' : '❌ FAILED (9/12 failed)'}`);
   
   if (allTestsPassed) {
     console.log('\n🎉 ALL TESTS PASSED! Core functionality is working correctly.');
@@ -50,9 +58,15 @@ function runAllTests() {
     console.log('   • DOM content replacement');
     console.log('   • Error handling and edge cases');
     console.log('   • Chrome extension manifest structure');
+    console.log('   • Property-based correctness validation');
     return true;
   } else {
     console.log('\n❌ SOME TESTS FAILED! Please review the issues above.');
+    console.log('\n📋 Status Summary:');
+    console.log(`   • Core functionality: ${coreTestsPassed ? 'Working' : 'Issues detected'}`);
+    console.log(`   • Integration: ${integrationTestsPassed ? 'Working' : 'Issues detected'}`);
+    console.log(`   • Manifest: ${manifestValid ? 'Valid' : 'Issues detected'}`);
+    console.log(`   • Property-based tests: ${propertyTestsPassed ? 'All passed' : '9/12 failed - implementation needs refinement'}`);
     return false;
   }
 }

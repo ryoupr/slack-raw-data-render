@@ -4,9 +4,14 @@
   "description": "Chrome extension to render Markdown content in Slack RAW file pages",
   "main": "content-script.js",
   "scripts": {
-    "test": "node test-core-functionality.js"
+    "test": "node run-all-tests.js",
+    "test:core": "node test-core-functionality.js",
+    "test:integration": "node test-integration.js",
+    "test:manifest": "node test-manifest.js",
+    "test:property": "node test-property-based.js"
   },
   "devDependencies": {
+    "fast-check": "^4.5.2",
     "jsdom": "^23.0.0"
   },
   "keywords": [
