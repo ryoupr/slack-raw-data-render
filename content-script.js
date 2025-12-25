@@ -458,6 +458,16 @@
       };
     }
     
+    // Check if content is only whitespace (spaces, tabs, newlines)
+    if (content.trim().length === 0) {
+      return {
+        isMarkdown: false,
+        confidence: 0,
+        detectedFeatures: [],
+        fileExtension: extractFileExtension()
+      };
+    }
+    
     const features = [];
     let confidence = 0;
     
