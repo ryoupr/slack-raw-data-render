@@ -548,9 +548,10 @@ function runPropertyBasedTests() {
             mockToggleState.currentView = 'raw';
             mockToggleState.displayedContent = mockToggleState.originalContent;
             return true;
-          } else if (targetView === 'rendered' && mockToggleState.processedHTML) {
+          } else if (targetView === 'rendered') {
             mockToggleState.currentView = 'rendered';
-            mockToggleState.displayedContent = mockToggleState.processedHTML;
+            // If processed HTML is available, use it; otherwise fall back to original content
+            mockToggleState.displayedContent = mockToggleState.processedHTML || mockToggleState.originalContent;
             return true;
           }
           return false;
@@ -596,14 +597,10 @@ function runPropertyBasedTests() {
             // In RAW mode, displayed content should be the original content
             return state.displayedContent === state.originalContent;
           } else if (state.currentView === 'rendered') {
-            // In rendered mode, displayed content should be the processed HTML
-            // Only if processed HTML is available
-            if (state.processedHTML) {
-              return state.displayedContent === state.processedHTML;
-            } else {
-              // If no processed HTML, should fall back to raw content
-              return state.displayedContent === state.originalContent;
-            }
+            // In rendered mode, displayed content should be the processed HTML if available,
+            // otherwise it should fall back to original content
+            const expectedContent = state.processedHTML || state.originalContent;
+            return state.displayedContent === expectedContent;
           }
           
           // Invalid state
