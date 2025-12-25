@@ -62,6 +62,347 @@
   }
 
   /**
+   * Non-Markdown Content Handling Functions
+   */
+  
+  /**
+   * Determines if content should be processed as Markdown
+   * @param {string} content - The content to evaluate
+   * @param {string} fileExtension - The file extension (if available)
+   * @returns {Object} Decision result with reasoning
+   */
+  function shouldProcessAsMarkdown(content, fileExtension = null) {
+    if (!content || typeof content !== 'string') {
+      return {
+        shouldProcess: false,
+        reason: 'Invalid or empty content',
+        confidence: 0,
+        analysis: null
+      };
+    }
+
+    // Check file extension first (strong indicator)
+    const hasMarkdownExtension = isMarkdownExtension(fileExtension);
+    
+    // Perform content analysis
+    const analysis = analyzeContentType(content);
+    
+    // Decision logic based on multiple factors
+    let shouldProcess = false;
+    let reason = '';
+    let confidence = analysis.confidence;
+
+    if (hasMarkdownExtension) {
+      // If file has Markdown extension, process it even if content analysis is uncertain
+      shouldProcess = true;
+      reason = `File has Markdown extension (.${fileExtension})`;
+      confidence = Math.max(confidence, 0.7); // Boost confidence for file extension
+    } else if (analysis.isMarkdown && analysis.confidence > 0.3) {
+      // If content analysis indicates Markdown with reasonable confidence
+      shouldProcess = true;
+      reason = `Content analysis detected Markdown (confidence: ${analysis.confidence.toFixed(2)})`;
+    } else if (analysis.confidence > 0.6) {
+      // High confidence from content analysis, even without file extension
+      shouldProcess = true;
+      reason = `High confidence Markdown detection (confidence: ${analysis.confidence.toFixed(2)})`;
+    } else {
+      // Low confidence or no Markdown indicators
+      shouldProcess = false;
+      reason = analysis.confidence > 0 ? 
+        `Low confidence Markdown detection (confidence: ${analysis.confidence.toFixed(2)})` :
+        'No Markdown patterns detected';
+    }
+
+    return {
+      shouldProcess,
+      reason,
+      confidence,
+      analysis,
+      hasMarkdownExtension,
+      detectedFeatures: analysis.detectedFeatures || []
+    };
+  }
+
+  /**
+   * Handles mixed content (content that has some Markdown but also plain text)
+   * @param {string} content - The mixed content
+   * @param {Object} analysis - Content analysis result
+   * @returns {Object} Processing decision and strategy
+   */
+  function handleMixedContent(content, analysis) {
+    const lines = content.split('\n');
+    const totalLines = lines.length;
+    let markdownLines = 0;
+    let plainTextLines = 0;
+
+    // Analyze each line to determine Markdown vs plain text ratio
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.length === 0) return; // Skip empty lines
+
+      // Check if line contains Markdown syntax
+      const hasMarkdownSyntax = /^#{1,6}\s|^[-*+]\s|^>\s|^\d+\.\s|```|`[^`]+`|\[.*\]\(.*\)|\*\*.*\*\*|__.*__|^\s*[-*_]{3,}$/.test(trimmedLine);
+      
+      if (hasMarkdownSyntax) {
+        markdownLines++;
+      } else {
+        plainTextLines++;
+      }
+    });
+
+    const markdownRatio = markdownLines / (markdownLines + plainTextLines);
+    
+    return {
+      totalLines,
+      markdownLines,
+      plainTextLines,
+      markdownRatio,
+      strategy: markdownRatio > 0.3 ? 'process_as_markdown' : 'preserve_as_plain_text',
+      reasoning: `${markdownLines} Markdown lines, ${plainTextLines} plain text lines (${(markdownRatio * 100).toFixed(1)}% Markdown)`
+    };
+  }
+
+  /**
+   * Preserves non-Markdown content in its original form
+   * @param {string} content - The content to preserve
+   * @param {string} reason - Reason for preservation
+   * @returns {Object} Preservation result
+   */
+  function preserveNonMarkdownContent(content, reason = 'Content is not Markdown') {
+    console.log(`Slack Markdown Renderer: Preserving non-Markdown content - ${reason}`);
+    
+    // Log the decision for debugging
+    logError(
+      new Error('Content preserved as non-Markdown'),
+      'Non-Markdown content preservation',
+      ERROR_CATEGORIES.VALIDATION,
+      ERROR_SEVERITY.LOW,
+      {
+        reason,
+        contentLength: content?.length || 0,
+        contentPreview: typeof content === 'string' ? content.substring(0, 100) : 'No content'
+      }
+    );
+
+    return {
+      preserved: true,
+      reason,
+      originalContent: content,
+      action: 'no_modification'
+    };
+  }
+
+  /**
+   * Creates a notification for non-Markdown content
+   * @param {string} reason - Reason why content was not processed
+   * @param {Object} analysis - Content analysis result
+   * @returns {HTMLElement|null} Notification element or null if creation fails
+   */
+  function createNonMarkdownNotification(reason, analysis = null) {
+    try {
+      const notification = document.createElement('div');
+      notification.className = 'slack-markdown-renderer-info-notification';
+      
+      const confidence = analysis?.confidence || 0;
+      const features = analysis?.detectedFeatures || [];
+      
+      notification.innerHTML = `
+        <div class="info-notice">
+          <p><strong>ℹ️ Slack Markdown Renderer</strong></p>
+          <p>${reason}</p>
+          ${confidence > 0 ? `
+            <details>
+              <summary>Analysis details</summary>
+              <p>Confidence: ${(confidence * 100).toFixed(1)}%</p>
+              ${features.length > 0 ? `<p>Detected features: ${features.join(', ')}</p>` : ''}
+            </details>
+          ` : ''}
+        </div>
+      `;
+      
+      return notification;
+    } catch (error) {
+      logError(error, 'Non-Markdown notification creation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
+      return null;
+    }
+  }
+
+  /**
+   * Shows a subtle notification about non-Markdown content (optional)
+   * @param {string} reason - Reason for not processing
+   * @param {Object} analysis - Content analysis result
+   * @param {number} duration - Duration to show notification (ms)
+   */
+  function showNonMarkdownNotification(reason, analysis = null, duration = 5000) {
+    try {
+      const notification = createNonMarkdownNotification(reason, analysis);
+      if (!notification) return;
+
+      // Add to page
+      document.body.appendChild(notification);
+      
+      // Auto-remove after duration
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, duration);
+      
+      console.log(`Slack Markdown Renderer: Non-Markdown notification shown - ${reason}`);
+    } catch (error) {
+      logError(error, 'Non-Markdown notification display', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
+    }
+  }
+
+  /**
+   * Handles content that appears to be code or structured text
+   * @param {string} content - The content to analyze
+   * @returns {Object} Analysis result with content type detection
+   */
+  function analyzeStructuredContent(content) {
+    if (!content || typeof content !== 'string') {
+      return { type: 'unknown', confidence: 0, features: [] };
+    }
+
+    const features = [];
+    let confidence = 0;
+    let detectedType = 'plain_text';
+
+    // Check for various structured content types
+    const patterns = {
+      json: {
+        pattern: /^\s*[\{\[][\s\S]*[\}\]]\s*$/,
+        confidence: 0.9,
+        features: ['json_structure']
+      },
+      xml: {
+        pattern: /<\?xml|<[a-zA-Z][^>]*>/,
+        confidence: 0.8,
+        features: ['xml_tags']
+      },
+      csv: {
+        pattern: /^[^,\n]*,[^,\n]*(?:,[^,\n]*)*$/m,
+        confidence: 0.7,
+        features: ['csv_structure']
+      },
+      log: {
+        pattern: /^\d{4}-\d{2}-\d{2}|\[\d{2}:\d{2}:\d{2}\]|ERROR|WARN|INFO|DEBUG/m,
+        confidence: 0.6,
+        features: ['log_format']
+      },
+      code: {
+        pattern: /(?:function|class|import|export|const|let|var|def|public|private|protected)\s+\w+|\/\*[\s\S]*?\*\/|\/\/.*$/m,
+        confidence: 0.7,
+        features: ['code_syntax']
+      },
+      config: {
+        pattern: /^\s*[a-zA-Z_][a-zA-Z0-9_]*\s*[=:]\s*.+$/m,
+        confidence: 0.5,
+        features: ['config_format']
+      }
+    };
+
+    // Test each pattern
+    for (const [type, { pattern, confidence: typeConfidence, features: typeFeatures }] of Object.entries(patterns)) {
+      if (pattern.test(content)) {
+        detectedType = type;
+        confidence = Math.max(confidence, typeConfidence);
+        features.push(...typeFeatures);
+      }
+    }
+
+    return {
+      type: detectedType,
+      confidence,
+      features,
+      isStructured: confidence > 0.4
+    };
+  }
+
+  /**
+   * Main function to handle non-Markdown content appropriately
+   * @param {string} content - The content to handle
+   * @param {string} fileExtension - File extension if available
+   * @returns {Object} Handling result with action taken
+   */
+  function handleNonMarkdownContent(content, fileExtension = null) {
+    // First, determine if we should process as Markdown
+    const markdownDecision = shouldProcessAsMarkdown(content, fileExtension);
+    
+    if (markdownDecision.shouldProcess) {
+      // Content should be processed as Markdown
+      return {
+        action: 'process_as_markdown',
+        reason: markdownDecision.reason,
+        confidence: markdownDecision.confidence,
+        analysis: markdownDecision.analysis
+      };
+    }
+
+    // Content should not be processed as Markdown
+    // Analyze what type of content it might be
+    const structuredAnalysis = analyzeStructuredContent(content);
+    
+    // Handle mixed content scenario
+    if (markdownDecision.analysis && markdownDecision.analysis.detectedFeatures.length > 0) {
+      const mixedAnalysis = handleMixedContent(content, markdownDecision.analysis);
+      
+      if (mixedAnalysis.strategy === 'process_as_markdown') {
+        return {
+          action: 'process_as_markdown',
+          reason: `Mixed content with sufficient Markdown ratio (${mixedAnalysis.reasoning})`,
+          confidence: markdownDecision.confidence,
+          analysis: markdownDecision.analysis,
+          mixedContent: true
+        };
+      }
+    }
+
+    // Preserve as non-Markdown content
+    const preservationResult = preserveNonMarkdownContent(
+      content,
+      `${markdownDecision.reason}${structuredAnalysis.isStructured ? ` (detected as ${structuredAnalysis.type})` : ''}`
+    );
+
+    // Optionally show a subtle notification (can be disabled)
+    const showNotification = false; // Set to true if you want notifications
+    if (showNotification) {
+      showNonMarkdownNotification(
+        preservationResult.reason,
+        markdownDecision.analysis,
+        3000 // 3 seconds
+      );
+    }
+
+    return {
+      action: 'preserve_original',
+      reason: preservationResult.reason,
+      confidence: markdownDecision.confidence,
+      analysis: markdownDecision.analysis,
+      structuredAnalysis,
+      preserved: true
+    };
+  }
+
+  /**
+   * Enhanced content analysis that considers non-Markdown content types
+   * @param {string} content - The content to analyze
+   * @returns {Object} Enhanced analysis result
+   */
+  function enhancedContentAnalysis(content) {
+    const markdownAnalysis = analyzeContentType(content);
+    const structuredAnalysis = analyzeStructuredContent(content);
+    
+    return {
+      markdown: markdownAnalysis,
+      structured: structuredAnalysis,
+      recommendation: markdownAnalysis.isMarkdown ? 'process_as_markdown' : 'preserve_original',
+      confidence: Math.max(markdownAnalysis.confidence, structuredAnalysis.confidence),
+      contentType: structuredAnalysis.isStructured ? structuredAnalysis.type : 'plain_text'
+    };
+  }
+
+  /**
    * Content Analysis Functions
    */
   
@@ -213,6 +554,279 @@
   }
 
   /**
+   * Error Handling and Logging System
+   */
+  
+  // Error categories for classification
+  const ERROR_CATEGORIES = {
+    PARSING: 'parsing',
+    DOM: 'dom',
+    NETWORK: 'network',
+    VALIDATION: 'validation',
+    UNKNOWN: 'unknown'
+  };
+
+  // Error severity levels
+  const ERROR_SEVERITY = {
+    LOW: 'low',
+    MEDIUM: 'medium',
+    HIGH: 'high',
+    CRITICAL: 'critical'
+  };
+
+  /**
+   * Logs errors with context and categorization
+   * @param {Error} error - The error object
+   * @param {string} context - Context where the error occurred
+   * @param {string} category - Error category from ERROR_CATEGORIES
+   * @param {string} severity - Error severity from ERROR_SEVERITY
+   * @param {Object} additionalData - Additional data for debugging
+   */
+  function logError(error, context, category = ERROR_CATEGORIES.UNKNOWN, severity = ERROR_SEVERITY.MEDIUM, additionalData = {}) {
+    const timestamp = new Date().toISOString();
+    const errorInfo = {
+      timestamp,
+      context,
+      category,
+      severity,
+      message: error?.message || 'Unknown error',
+      stack: error?.stack || 'No stack trace available',
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      additionalData
+    };
+
+    // Log to console with appropriate level
+    const logMethod = severity === ERROR_SEVERITY.CRITICAL ? 'error' : 
+                     severity === ERROR_SEVERITY.HIGH ? 'error' :
+                     severity === ERROR_SEVERITY.MEDIUM ? 'warn' : 'log';
+    
+    console[logMethod](`Slack Markdown Renderer [${category.toUpperCase()}] ${context}:`, errorInfo);
+
+    // Store error for potential reporting (in session storage for debugging)
+    try {
+      const errorLog = JSON.parse(sessionStorage.getItem('slack-markdown-renderer-errors') || '[]');
+      errorLog.push(errorInfo);
+      
+      // Keep only last 50 errors to prevent storage overflow
+      if (errorLog.length > 50) {
+        errorLog.splice(0, errorLog.length - 50);
+      }
+      
+      sessionStorage.setItem('slack-markdown-renderer-errors', JSON.stringify(errorLog));
+    } catch (storageError) {
+      console.warn('Slack Markdown Renderer: Could not store error log:', storageError);
+    }
+  }
+
+  /**
+   * Handles parsing errors with fallback mechanisms
+   * @param {Error} error - The parsing error
+   * @param {string} content - The content that failed to parse
+   * @returns {Object} Fallback result with error information
+   */
+  function handleParsingError(error, content) {
+    logError(error, 'Markdown parsing failed', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.MEDIUM, {
+      contentLength: content?.length || 0,
+      contentPreview: typeof content === 'string' ? content.substring(0, 100) : 'No content'
+    });
+
+    // Fallback: return original content wrapped in pre tag
+    const fallbackHTML = `
+      <div class="slack-markdown-renderer-content error-fallback">
+        <div class="error-notice">
+          <p><strong>⚠️ Markdown parsing failed</strong></p>
+          <p>Displaying original content instead.</p>
+          <details>
+            <summary>Error details</summary>
+            <pre>${error.message}</pre>
+          </details>
+        </div>
+        <div class="original-content">
+          <pre>${content || 'No content available'}</pre>
+        </div>
+      </div>
+    `;
+
+    return {
+      success: false,
+      html: null,
+      styledHTML: fallbackHTML,
+      error: error.message,
+      fallbackUsed: true
+    };
+  }
+
+  /**
+   * Handles DOM manipulation errors with fallback mechanisms
+   * @param {Error} error - The DOM error
+   * @param {HTMLElement} element - The element that caused the error
+   * @returns {Object} Result with error information and fallback status
+   */
+  function handleDOMError(error, element) {
+    logError(error, 'DOM manipulation failed', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.HIGH, {
+      elementTag: element?.tagName || 'Unknown',
+      elementId: element?.id || 'No ID',
+      elementClass: element?.className || 'No class'
+    });
+
+    // Fallback: try to find alternative container or create notification
+    try {
+      // Try to show error notification without breaking the page
+      const notification = document.createElement('div');
+      notification.className = 'slack-markdown-renderer-error-notification';
+      notification.innerHTML = `
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; margin: 10px 0; border-radius: 4px;">
+          <strong>⚠️ Slack Markdown Renderer Error</strong><br>
+          Could not modify page content. The extension may not work properly on this page.
+        </div>
+      `;
+      
+      // Try to add notification to body
+      if (document.body) {
+        document.body.insertBefore(notification, document.body.firstChild);
+        
+        // Auto-remove notification after 10 seconds
+        setTimeout(() => {
+          if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+          }
+        }, 10000);
+      }
+
+      return {
+        success: false,
+        error: error.message,
+        fallbackUsed: true,
+        notificationShown: true
+      };
+    } catch (fallbackError) {
+      logError(fallbackError, 'DOM error fallback failed', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.CRITICAL);
+      return {
+        success: false,
+        error: error.message,
+        fallbackUsed: false,
+        notificationShown: false
+      };
+    }
+  }
+
+  /**
+   * Handles network-related errors (though less common in content scripts)
+   * @param {Error} error - The network error
+   * @param {string} resource - The resource that failed to load
+   * @returns {Object} Result with error information
+   */
+  function handleNetworkError(error, resource) {
+    logError(error, 'Network operation failed', ERROR_CATEGORIES.NETWORK, ERROR_SEVERITY.MEDIUM, {
+      resource: resource || 'Unknown resource',
+      online: navigator.onLine
+    });
+
+    // For content scripts, network errors are usually about external resources
+    // Fallback: continue without the failed resource
+    return {
+      success: false,
+      error: error.message,
+      resource: resource,
+      fallbackUsed: true,
+      canContinue: true
+    };
+  }
+
+  /**
+   * Handles validation errors
+   * @param {Error} error - The validation error
+   * @param {string} validationType - Type of validation that failed
+   * @param {*} invalidValue - The value that failed validation
+   * @returns {Object} Result with error information
+   */
+  function handleValidationError(error, validationType, invalidValue) {
+    logError(error, `Validation failed: ${validationType}`, ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.LOW, {
+      validationType,
+      invalidValue: typeof invalidValue === 'object' ? JSON.stringify(invalidValue) : String(invalidValue),
+      valueType: typeof invalidValue
+    });
+
+    return {
+      success: false,
+      error: error.message,
+      validationType,
+      fallbackUsed: false
+    };
+  }
+
+  /**
+   * Generic error handler that routes to specific handlers
+   * @param {Error} error - The error to handle
+   * @param {string} context - Context where error occurred
+   * @param {string} category - Error category
+   * @param {*} additionalData - Additional context data
+   * @returns {Object} Handled error result
+   */
+  function handleError(error, context, category, additionalData = {}) {
+    switch (category) {
+      case ERROR_CATEGORIES.PARSING:
+        return handleParsingError(error, additionalData.content);
+      case ERROR_CATEGORIES.DOM:
+        return handleDOMError(error, additionalData.element);
+      case ERROR_CATEGORIES.NETWORK:
+        return handleNetworkError(error, additionalData.resource);
+      case ERROR_CATEGORIES.VALIDATION:
+        return handleValidationError(error, additionalData.validationType, additionalData.invalidValue);
+      default:
+        logError(error, context, category, ERROR_SEVERITY.MEDIUM, additionalData);
+        return {
+          success: false,
+          error: error.message,
+          fallbackUsed: false
+        };
+    }
+  }
+
+  /**
+   * Safe execution wrapper that catches and handles errors
+   * @param {Function} fn - Function to execute safely
+   * @param {string} context - Context description
+   * @param {string} category - Error category
+   * @param {*} fallbackValue - Value to return on error
+   * @returns {*} Function result or fallback value
+   */
+  function safeExecute(fn, context, category = ERROR_CATEGORIES.UNKNOWN, fallbackValue = null) {
+    try {
+      return fn();
+    } catch (error) {
+      const result = handleError(error, context, category);
+      return fallbackValue !== null ? fallbackValue : result;
+    }
+  }
+
+  /**
+   * Gets error log for debugging
+   * @returns {Array} Array of logged errors
+   */
+  function getErrorLog() {
+    try {
+      return JSON.parse(sessionStorage.getItem('slack-markdown-renderer-errors') || '[]');
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not retrieve error log:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Clears error log
+   */
+  function clearErrorLog() {
+    try {
+      sessionStorage.removeItem('slack-markdown-renderer-errors');
+      console.log('Slack Markdown Renderer: Error log cleared');
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not clear error log:', error);
+    }
+  }
+
+  /**
    * Markdown Parsing Functions
    */
   
@@ -221,30 +835,42 @@
    */
   function configureMarkedOptions() {
     if (typeof marked === 'undefined') {
-      throw new Error('Marked.js library is not loaded');
+      const error = new Error('Marked.js library is not loaded');
+      logError(error, 'Marked.js configuration', ERROR_CATEGORIES.NETWORK, ERROR_SEVERITY.CRITICAL, {
+        markedAvailable: typeof marked !== 'undefined'
+      });
+      throw error;
     }
     
-    // Configure marked options for security and features
-    marked.setOptions({
-      breaks: true,        // Convert line breaks to <br>
-      gfm: true,          // Enable GitHub Flavored Markdown
-      sanitize: false,    // We'll handle sanitization separately if needed
-      smartLists: true,   // Use smarter list behavior
-      smartypants: false, // Don't use smart quotes
-      xhtml: false,       // Don't use XHTML-compliant tags
-      highlight: function(code, lang) {
-        // Use Prism.js for syntax highlighting if available
-        if (typeof Prism !== 'undefined' && lang && Prism.languages[lang]) {
-          try {
-            return Prism.highlight(code, Prism.languages[lang], lang);
-          } catch (error) {
-            console.warn('Slack Markdown Renderer: Error highlighting code with Prism:', error);
-            return code; // Return unhighlighted code
+    try {
+      // Configure marked options for security and features
+      marked.setOptions({
+        breaks: true,        // Convert line breaks to <br>
+        gfm: true,          // Enable GitHub Flavored Markdown
+        sanitize: false,    // We'll handle sanitization separately if needed
+        smartLists: true,   // Use smarter list behavior
+        smartypants: false, // Don't use smart quotes
+        xhtml: false,       // Don't use XHTML-compliant tags
+        highlight: function(code, lang) {
+          // Use Prism.js for syntax highlighting if available
+          if (typeof Prism !== 'undefined' && lang && Prism.languages[lang]) {
+            try {
+              return Prism.highlight(code, Prism.languages[lang], lang);
+            } catch (error) {
+              logError(error, 'Prism.js syntax highlighting', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.LOW, {
+                language: lang,
+                codeLength: code?.length || 0
+              });
+              return code; // Return unhighlighted code
+            }
           }
+          return code; // Return unhighlighted code
         }
-        return code; // Return unhighlighted code
-      }
-    });
+      });
+    } catch (error) {
+      logError(error, 'Marked.js options configuration', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.HIGH);
+      throw new Error(`Failed to configure Marked.js: ${error.message}`);
+    }
   }
 
   /**
@@ -255,7 +881,12 @@
    */
   function parseMarkdown(markdownContent) {
     if (typeof markdownContent !== 'string') {
-      throw new Error('Markdown content must be a string');
+      const error = new Error('Markdown content must be a string');
+      logError(error, 'parseMarkdown input validation', ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.LOW, {
+        actualType: typeof markdownContent,
+        value: markdownContent
+      });
+      throw error;
     }
     
     if (markdownContent.trim().length === 0) {
@@ -275,7 +906,10 @@
       
       return htmlContent;
     } catch (error) {
-      console.error('Slack Markdown Renderer: Error parsing Markdown:', error);
+      logError(error, 'Markdown parsing', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.MEDIUM, {
+        contentLength: markdownContent.length,
+        contentPreview: markdownContent.substring(0, 100)
+      });
       throw new Error(`Failed to parse Markdown: ${error.message}`);
     }
   }
@@ -294,10 +928,13 @@
         error: null
       };
     } catch (error) {
+      // Use the comprehensive error handler
+      const errorResult = handleParsingError(error, content);
       return {
         success: false,
         html: null,
-        error: error.message
+        error: error.message,
+        fallbackHTML: errorResult.styledHTML
       };
     }
   }
@@ -336,8 +973,9 @@
       return {
         success: false,
         html: null,
-        styledHTML: null,
-        error: result.error
+        styledHTML: result.fallbackHTML || null,
+        error: result.error,
+        fallbackUsed: !!result.fallbackHTML
       };
     }
     
@@ -347,14 +985,33 @@
         success: true,
         html: result.html,
         styledHTML: styledHTML,
-        error: null
+        error: null,
+        fallbackUsed: false
       };
     } catch (error) {
+      logError(error, 'HTML styling generation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM, {
+        htmlLength: result.html?.length || 0
+      });
+      
+      // Fallback: return unstyled HTML wrapped in basic container
+      const fallbackHTML = `
+        <div class="slack-markdown-renderer-content error-fallback">
+          <div class="error-notice">
+            <p><strong>⚠️ Styling failed</strong></p>
+            <p>Displaying unstyled content.</p>
+          </div>
+          <div class="unstyled-content">
+            ${result.html}
+          </div>
+        </div>
+      `;
+      
       return {
         success: false,
         html: result.html,
-        styledHTML: null,
-        error: `Failed to generate styled HTML: ${error.message}`
+        styledHTML: fallbackHTML,
+        error: `Failed to generate styled HTML: ${error.message}`,
+        fallbackUsed: true
       };
     }
   }
@@ -412,18 +1069,28 @@
    */
   function backupOriginalContent(container) {
     if (!container) {
-      throw new Error('Container element is required for backup');
+      const error = new Error('Container element is required for backup');
+      logError(error, 'backupOriginalContent', ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.MEDIUM);
+      throw error;
     }
     
-    originalContentBackup = {
-      innerHTML: container.innerHTML,
-      textContent: container.textContent,
-      className: container.className,
-      tagName: container.tagName
-    };
-    
-    currentContentContainer = container;
-    console.log('Slack Markdown Renderer: Original content backed up');
+    try {
+      originalContentBackup = {
+        innerHTML: container.innerHTML,
+        textContent: container.textContent,
+        className: container.className,
+        tagName: container.tagName
+      };
+      
+      currentContentContainer = container;
+      console.log('Slack Markdown Renderer: Original content backed up');
+    } catch (error) {
+      logError(error, 'Content backup', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.HIGH, {
+        containerTag: container.tagName,
+        containerId: container.id
+      });
+      throw new Error(`Failed to backup content: ${error.message}`);
+    }
   }
 
   /**
@@ -433,17 +1100,27 @@
    */
   function replaceContentWithHTML(styledHTML) {
     if (typeof styledHTML !== 'string' || styledHTML.trim().length === 0) {
-      throw new Error('Styled HTML content is required');
+      const error = new Error('Styled HTML content is required');
+      logError(error, 'replaceContentWithHTML', ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.MEDIUM);
+      throw error;
     }
     
     const container = currentContentContainer || findContentContainer();
     if (!container) {
-      throw new Error('Could not find content container for replacement');
+      const error = new Error('Could not find content container for replacement');
+      logError(error, 'Content container detection', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.HIGH);
+      throw error;
     }
     
     // Backup original content if not already done
     if (!originalContentBackup) {
-      backupOriginalContent(container);
+      try {
+        backupOriginalContent(container);
+      } catch (backupError) {
+        // If backup fails, we can still try to replace content but warn user
+        logError(backupError, 'Backup during replacement', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM);
+        console.warn('Slack Markdown Renderer: Content backup failed, toggle functionality may not work');
+      }
     }
     
     try {
@@ -455,7 +1132,7 @@
       console.log('Slack Markdown Renderer: Content successfully replaced with rendered HTML');
       return true;
     } catch (error) {
-      console.error('Slack Markdown Renderer: Error replacing content:', error);
+      const errorResult = handleDOMError(error, container);
       throw new Error(`Failed to replace content: ${error.message}`);
     }
   }
@@ -466,7 +1143,9 @@
    */
   function restoreOriginalContent() {
     if (!originalContentBackup || !currentContentContainer) {
-      throw new Error('No backup available to restore');
+      const error = new Error('No backup available to restore');
+      logError(error, 'restoreOriginalContent', ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.MEDIUM);
+      throw error;
     }
     
     try {
@@ -478,7 +1157,7 @@
       console.log('Slack Markdown Renderer: Original content restored');
       return true;
     } catch (error) {
-      console.error('Slack Markdown Renderer: Error restoring content:', error);
+      const errorResult = handleDOMError(error, currentContentContainer);
       throw new Error(`Failed to restore content: ${error.message}`);
     }
   }
@@ -533,13 +1212,19 @@
       return {
         success: success,
         state: getContentState(),
-        error: null
+        error: null,
+        fallbackUsed: false
       };
     } catch (error) {
+      // Try to handle the error gracefully
+      const errorResult = handleDOMError(error, currentContentContainer || findContentContainer());
+      
       return {
         success: false,
         state: getContentState(),
-        error: error.message
+        error: error.message,
+        fallbackUsed: errorResult.fallbackUsed,
+        notificationShown: errorResult.notificationShown
       };
     }
   }
@@ -1334,87 +2019,171 @@
     };
   }
 
-  // Initialize URL detection
-  if (isSlackRawPage()) {
-    console.log('Slack Markdown Renderer: Detected Slack RAW file page');
-    
-    // Perform content analysis
-    const content = extractTextContent();
-    const analysis = analyzeContentType(content);
-    const fileExtension = extractFileExtension();
-    
-    console.log('Slack Markdown Renderer: Content analysis result:', {
-      isMarkdown: analysis.isMarkdown,
-      confidence: analysis.confidence,
-      features: analysis.detectedFeatures,
-      fileExtension: fileExtension,
-      isMarkdownExtension: isMarkdownExtension(fileExtension)
-    });
-    
-    if (analysis.isMarkdown || isMarkdownExtension(fileExtension)) {
-      console.log('Slack Markdown Renderer: Markdown content detected, processing...');
+  // Initialize URL detection with comprehensive error handling
+  try {
+    if (isSlackRawPage()) {
+      console.log('Slack Markdown Renderer: Detected Slack RAW file page');
       
-      // Process the Markdown content
-      const processingResult = processMarkdownContent(content);
+      // Perform content analysis with error handling
+      const content = safeExecute(
+        () => extractTextContent(),
+        'Content extraction',
+        ERROR_CATEGORIES.DOM,
+        ''
+      );
       
-      if (processingResult.success) {
-        console.log('Slack Markdown Renderer: Markdown processing successful');
+      const fileExtension = safeExecute(
+        () => extractFileExtension(),
+        'File extension extraction',
+        ERROR_CATEGORIES.VALIDATION,
+        null
+      );
+      
+      // Use enhanced content handling to determine processing strategy
+      const contentHandling = safeExecute(
+        () => handleNonMarkdownContent(content, fileExtension),
+        'Content handling decision',
+        ERROR_CATEGORIES.VALIDATION,
+        { action: 'preserve_original', reason: 'Analysis failed' }
+      );
+      
+      console.log('Slack Markdown Renderer: Content handling decision:', {
+        action: contentHandling.action,
+        reason: contentHandling.reason,
+        confidence: contentHandling.confidence,
+        fileExtension: fileExtension
+      });
+      
+      if (contentHandling.action === 'process_as_markdown') {
+        console.log('Slack Markdown Renderer: Processing content as Markdown');
         
-        // Store processed HTML for toggle functionality
-        processedMarkdownHTML = processingResult.styledHTML;
+        // Process the Markdown content with error handling
+        const processingResult = safeExecute(
+          () => processMarkdownContent(content),
+          'Markdown processing',
+          ERROR_CATEGORIES.PARSING,
+          { success: false, error: 'Processing failed', styledHTML: null }
+        );
         
-        // Replace content with rendered HTML
-        const replacementResult = performContentReplacement(processingResult.styledHTML);
-        
-        if (replacementResult.success) {
-          console.log('Slack Markdown Renderer: Content replacement successful');
-          console.log('Current state:', replacementResult.state);
+        if (processingResult.success || processingResult.fallbackUsed) {
+          console.log('Slack Markdown Renderer: Markdown processing completed', {
+            success: processingResult.success,
+            fallbackUsed: processingResult.fallbackUsed
+          });
           
-          // Apply enhanced styling
-          applyBaseStyles();
-          applyTypographyEnhancements();
+          // Store processed HTML for toggle functionality
+          processedMarkdownHTML = processingResult.styledHTML;
           
-          // Load and apply saved theme preference
-          const savedTheme = loadThemePreference();
-          setBackgroundTheme(savedTheme);
+          // Replace content with rendered HTML
+          const replacementResult = safeExecute(
+            () => performContentReplacement(processingResult.styledHTML),
+            'Content replacement',
+            ERROR_CATEGORIES.DOM,
+            { success: false, error: 'Replacement failed' }
+          );
           
-          // Apply default color scheme
-          applyColorScheme('default');
-          
-          // Apply syntax highlighting
-          const container = currentContentContainer || findContentContainer();
-          if (container) {
-            applySyntaxHighlighting(container);
-            setSyntaxHighlightingTheme('default');
-          }
-          
-          // Create and add toggle button
-          const button = createToggleButton();
-          const buttonAdded = addToggleButtonToPage();
-          
-          if (buttonAdded) {
-            // Set initial view to rendered mode
-            updateToggleButton('rendered');
+          if (replacementResult.success || replacementResult.fallbackUsed) {
+            console.log('Slack Markdown Renderer: Content replacement completed', {
+              success: replacementResult.success,
+              fallbackUsed: replacementResult.fallbackUsed,
+              state: replacementResult.state
+            });
             
-            // Initialize with user preferences
-            initializeWithPreferences();
+            // Apply enhanced styling with error handling
+            safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
+            safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
             
-            console.log('Slack Markdown Renderer: Toggle button successfully added');
-            console.log('Final state:', getCurrentState());
+            // Load and apply saved theme preference
+            const savedTheme = safeExecute(
+              () => loadThemePreference(),
+              'Theme preference loading',
+              ERROR_CATEGORIES.VALIDATION,
+              'white'
+            );
+            safeExecute(() => setBackgroundTheme(savedTheme), 'Background theme application', ERROR_CATEGORIES.DOM);
+            
+            // Apply default color scheme
+            safeExecute(() => applyColorScheme('default'), 'Color scheme application', ERROR_CATEGORIES.DOM);
+            
+            // Apply syntax highlighting
+            const container = currentContentContainer || findContentContainer();
+            if (container) {
+              safeExecute(() => applySyntaxHighlighting(container), 'Syntax highlighting', ERROR_CATEGORIES.PARSING);
+              safeExecute(() => setSyntaxHighlightingTheme('default'), 'Syntax highlighting theme', ERROR_CATEGORIES.DOM);
+            }
+            
+            // Create and add toggle button with error handling
+            const button = safeExecute(
+              () => createToggleButton(),
+              'Toggle button creation',
+              ERROR_CATEGORIES.DOM,
+              null
+            );
+            
+            if (button) {
+              const buttonAdded = safeExecute(
+                () => addToggleButtonToPage(),
+                'Toggle button addition',
+                ERROR_CATEGORIES.DOM,
+                false
+              );
+              
+              if (buttonAdded) {
+                // Set initial view to rendered mode
+                safeExecute(() => updateToggleButton('rendered'), 'Toggle button update', ERROR_CATEGORIES.DOM);
+                
+                // Initialize with user preferences
+                safeExecute(() => initializeWithPreferences(), 'Preferences initialization', ERROR_CATEGORIES.VALIDATION);
+                
+                console.log('Slack Markdown Renderer: Toggle button successfully added');
+                console.log('Final state:', getCurrentState());
+              } else {
+                console.error('Slack Markdown Renderer: Failed to add toggle button to page');
+                logError(new Error('Toggle button addition failed'), 'Toggle button setup', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM);
+              }
+            } else {
+              console.error('Slack Markdown Renderer: Failed to create toggle button');
+              logError(new Error('Toggle button creation failed'), 'Toggle button setup', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM);
+            }
           } else {
-            console.error('Slack Markdown Renderer: Failed to add toggle button to page');
+            console.error('Slack Markdown Renderer: Content replacement failed:', replacementResult.error);
+            logError(new Error(replacementResult.error), 'Content replacement pipeline', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.HIGH);
           }
         } else {
-          console.error('Slack Markdown Renderer: Content replacement failed:', replacementResult.error);
+          console.error('Slack Markdown Renderer: Markdown processing failed:', processingResult.error);
+          logError(new Error(processingResult.error), 'Markdown processing pipeline', ERROR_CATEGORIES.PARSING, ERROR_SEVERITY.HIGH);
         }
       } else {
-        console.error('Slack Markdown Renderer: Markdown processing failed:', processingResult.error);
+        // Content should be preserved as-is
+        console.log('Slack Markdown Renderer: Preserving content as non-Markdown:', contentHandling.reason);
+        
+        // Log the preservation decision
+        logError(
+          new Error('Content preserved as non-Markdown'),
+          'Content preservation decision',
+          ERROR_CATEGORIES.VALIDATION,
+          ERROR_SEVERITY.LOW,
+          {
+            reason: contentHandling.reason,
+            confidence: contentHandling.confidence,
+            contentType: contentHandling.structuredAnalysis?.type || 'unknown',
+            fileExtension: fileExtension
+          }
+        );
+        
+        // No modification to the page - extension remains inactive for this content
+        console.log('Slack Markdown Renderer: Extension inactive for this content type');
       }
     } else {
-      console.log('Slack Markdown Renderer: No Markdown content detected');
+      console.log('Slack Markdown Renderer: Not a Slack RAW file page, extension inactive');
     }
-  } else {
-    console.log('Slack Markdown Renderer: Not a Slack RAW file page, extension inactive');
+  } catch (error) {
+    // Catch-all error handler for initialization
+    logError(error, 'Extension initialization', ERROR_CATEGORIES.UNKNOWN, ERROR_SEVERITY.CRITICAL, {
+      url: window.location.href,
+      timestamp: new Date().toISOString()
+    });
+    console.error('Slack Markdown Renderer: Critical initialization error:', error);
   }
   
 })();
