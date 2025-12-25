@@ -111,7 +111,17 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
     
     if (typeof marked !== 'undefined') {
       try {
-        return marked(content);
+        // Configure marked options for proper parsing
+        marked.setOptions({
+          breaks: true,        // Convert line breaks to <br>
+          gfm: true,          // Enable GitHub Flavored Markdown
+          sanitize: false,    // We'll handle sanitization separately if needed
+          smartLists: true,   // Use smarter list behavior
+          smartypants: false, // Don't use smart quotes
+          xhtml: false        // Don't use XHTML-compliant tags
+        });
+        
+        return marked.parse(content);
       } catch (error) {
         return content;
       }
@@ -205,16 +215,114 @@ function runPropertyBasedTests() {
   propertyTest('Property 4: Markdown Parsing Round Trip',
     fc.property(
       fc.oneof(
-        fc.constant('# Header'),
+        fc.constant('# Header 1'),
         fc.constant('## Header 2'),
-        fc.constant('- Item 1\n- Item 2'),
-        fc.constant('```\ncode\n```'),
-        fc.constant('[link](https://example.com)')
+        fc.constant('### Header 3'),
+        fc.constant('- Item 1\n- Item 2\n- Item 3'),
+        fc.constant('* Bullet 1\n* Bullet 2'),
+        fc.constant('1. First\n2. Second\n3. Third'),
+        fc.constant('```javascript\nconst x = 1;\n```'),
+        fc.constant('```\nplain code\n```'),
+        fc.constant('[link text](https://example.com)'),
+        fc.constant('[another link](https://test.com "Title")'),
+        fc.constant('**bold text**'),
+        fc.constant('*italic text*'),
+        fc.constant('`inline code`'),
+        fc.constant('> This is a blockquote\n> with multiple lines'),
+        fc.constant('---'),
+        fc.constant('| Col1 | Col2 |\n|------|------|\n| A    | B    |')
       ),
       (markdown) => {
         const html = parseMarkdown(markdown);
-        // Check that parsing produces valid HTML with expected elements
-        return typeof html === 'string' && html.length > 0;
+        
+        // Check that parsing produces valid HTML
+        if (typeof html !== 'string' || html.length === 0) {
+          return false;
+        }
+        
+        // Check semantic elements based on markdown type (order matters!)
+        
+        // Check tables first (before horizontal rules)
+        if (markdown.includes('|') && markdown.includes('---')) {
+          // Tables should produce <table>, <thead>, <tbody>, <tr>, <td>
+          if (!html.includes('<table>') || !html.includes('<tr>') || !html.includes('<td>')) {
+            return false;
+          }
+        }
+        else if (markdown.includes('---')) {
+          // Horizontal rules should produce <hr> (only if not a table)
+          if (!html.includes('<hr>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.startsWith('#')) {
+          // Headers should produce h1, h2, h3, etc.
+          const headerLevel = markdown.match(/^(#{1,6})/)[1].length;
+          const expectedTag = `<h${headerLevel}`;
+          if (!html.includes(expectedTag)) {
+            return false;
+          }
+        }
+        
+        if (markdown.startsWith('- ') || markdown.startsWith('* ')) {
+          // Unordered lists should produce <ul> and <li>
+          if (!html.includes('<ul>') || !html.includes('<li>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.match(/^\d+\. /m)) {
+          // Ordered lists should produce <ol> and <li>
+          if (!html.includes('<ol>') || !html.includes('<li>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.includes('```')) {
+          // Code blocks should produce <pre> and <code>
+          if (!html.includes('<pre>') || !html.includes('<code')) {
+            return false;
+          }
+        }
+        
+        if (markdown.includes('`') && !markdown.includes('```')) {
+          // Inline code should produce <code>
+          if (!html.includes('<code')) {
+            return false;
+          }
+        }
+        
+        if (markdown.includes('[') && markdown.includes('](')) {
+          // Links should produce <a> tags
+          if (!html.includes('<a ') && !html.includes('<a>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.includes('**')) {
+          // Bold text should produce <strong>
+          if (!html.includes('<strong>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.includes('*') && !markdown.includes('**') && !markdown.startsWith('*')) {
+          // Italic text should produce <em>
+          if (!html.includes('<em>')) {
+            return false;
+          }
+        }
+        
+        if (markdown.startsWith('>')) {
+          // Blockquotes should produce <blockquote>
+          if (!html.includes('<blockquote>')) {
+            return false;
+          }
+        }
+        
+        // All checks passed - the HTML contains the expected semantic structure
+        return true;
       }
     )
   );
