@@ -106,7 +106,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Configure highlighting themes
     - _Requirements: 5.4_
 
-  - [ ] 6.3 Write unit tests for styling application
+  - [x] 6.3 Write unit tests for styling application
     - Test CSS class application
     - Test background color setting
     - _Requirements: 5.1, 5.2, 5.3_
