@@ -110,7 +110,8 @@ fi
 is_image_file() {
     local file="$1"
     local extension="${file##*.}"
-    case "${extension,,}" in
+    local extension_lower=$(echo "$extension" | tr '[:upper:]' '[:lower:]')
+    case "$extension_lower" in
         jpg|jpeg|png|gif|bmp|tiff|tif|webp)
             return 0
             ;;
@@ -160,7 +161,10 @@ generate_output_filename() {
 }
 
 # ファイルリストを収集
-mapfile -t INPUT_FILES < <(collect_files "$@")
+INPUT_FILES=()
+while IFS= read -r file; do
+    [ -n "$file" ] && INPUT_FILES+=("$file")
+done < <(collect_files "$@")
 
 if [ ${#INPUT_FILES[@]} -eq 0 ]; then
     print_error "処理対象の画像ファイルが見つかりません。"
