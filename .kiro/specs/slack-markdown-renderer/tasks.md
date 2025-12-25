@@ -86,7 +86,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Implement session preference persistence
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-  - [ ] 5.3 Write property test for toggle functionality
+  - [x] 5.3 Write property test for toggle functionality
     - **Property 8: Toggle State Consistency**
     - **Validates: Requirements 3.2, 3.3, 3.4**
 

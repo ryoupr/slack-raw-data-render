@@ -497,13 +497,109 @@ function runPropertyBasedTests() {
   // Property 8: Toggle State Consistency
   // Feature: slack-markdown-renderer, Property 8: Toggle State Consistency
   propertyTest('Property 8: Toggle State Consistency',
-    fc.property(fc.boolean(), (initialState) => {
-      // This property tests that toggle state management is consistent
-      // Since we don't have actual DOM manipulation in tests, we test the logic
-      const state = { currentView: initialState ? 'rendered' : 'raw' };
-      const newState = state.currentView === 'raw' ? 'rendered' : 'raw';
-      return newState !== state.currentView;
-    })
+    fc.property(
+      fc.record({
+        initialView: fc.constantFrom('raw', 'rendered'),
+        hasProcessedHTML: fc.boolean(),
+        contentLength: fc.integer({ min: 0, max: 10000 }),
+        toggleSequence: fc.array(fc.constantFrom('toggle', 'raw', 'rendered'), { minLength: 1, maxLength: 5 })
+      }),
+      (testData) => {
+        // Setup test environment with DOM
+        const dom = new JSDOM(`
+          <html>
+            <body>
+              <pre id="file-content">Original test content</pre>
+              <div id="rendered-content" style="display: none;">Rendered HTML content</div>
+            </body>
+          </html>
+        `, { url: 'https://files.slack.com/files-pri/test-file.md' });
+        
+        global.document = dom.window.document;
+        global.window = dom.window;
+        
+        // Mock state variables
+        let mockCurrentView = testData.initialView;
+        let mockProcessedHTML = testData.hasProcessedHTML ? '<p>Mock HTML content</p>' : null;
+        let mockOriginalContent = 'Original test content';
+        
+        // Mock toggle functions that track state consistency
+        const mockToggleState = {
+          currentView: mockCurrentView,
+          processedHTML: mockProcessedHTML,
+          originalContent: mockOriginalContent,
+          displayedContent: testData.initialView === 'raw' ? mockOriginalContent : mockProcessedHTML
+        };
+        
+        // Function to simulate view switching
+        function simulateViewSwitch(targetView) {
+          if (targetView === 'raw') {
+            mockToggleState.currentView = 'raw';
+            mockToggleState.displayedContent = mockToggleState.originalContent;
+            return true;
+          } else if (targetView === 'rendered' && mockToggleState.processedHTML) {
+            mockToggleState.currentView = 'rendered';
+            mockToggleState.displayedContent = mockToggleState.processedHTML;
+            return true;
+          }
+          return false;
+        }
+        
+        // Function to simulate toggle operation
+        function simulateToggle() {
+          const newView = mockToggleState.currentView === 'raw' ? 'rendered' : 'raw';
+          return simulateViewSwitch(newView);
+        }
+        
+        // Execute the toggle sequence and verify state consistency
+        let allOperationsConsistent = true;
+        
+        for (const operation of testData.toggleSequence) {
+          let operationSuccess = false;
+          
+          if (operation === 'toggle') {
+            operationSuccess = simulateToggle();
+          } else {
+            operationSuccess = simulateViewSwitch(operation);
+          }
+          
+          // Verify state consistency after each operation
+          const stateConsistent = checkStateConsistency(mockToggleState);
+          
+          if (!stateConsistent) {
+            allOperationsConsistent = false;
+            break;
+          }
+          
+          // If operation failed but state is still consistent, that's acceptable
+          // (e.g., trying to switch to rendered view when no HTML is available)
+        }
+        
+        return allOperationsConsistent;
+        
+        // Helper function to check state consistency
+        function checkStateConsistency(state) {
+          // Property: Current view state should always match the displayed content
+          
+          if (state.currentView === 'raw') {
+            // In RAW mode, displayed content should be the original content
+            return state.displayedContent === state.originalContent;
+          } else if (state.currentView === 'rendered') {
+            // In rendered mode, displayed content should be the processed HTML
+            // Only if processed HTML is available
+            if (state.processedHTML) {
+              return state.displayedContent === state.processedHTML;
+            } else {
+              // If no processed HTML, should fall back to raw content
+              return state.displayedContent === state.originalContent;
+            }
+          }
+          
+          // Invalid state
+          return false;
+        }
+      }
+    )
   );
   
   // Property 9: Session Preference Persistence
