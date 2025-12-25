@@ -212,6 +212,326 @@
     return markdownExtensions.includes(extension.toLowerCase());
   }
 
+  /**
+   * Markdown Parsing Functions
+   */
+  
+  /**
+   * Configures Marked.js with security and feature options
+   */
+  function configureMarkedOptions() {
+    if (typeof marked === 'undefined') {
+      throw new Error('Marked.js library is not loaded');
+    }
+    
+    // Configure marked options for security and features
+    marked.setOptions({
+      breaks: true,        // Convert line breaks to <br>
+      gfm: true,          // Enable GitHub Flavored Markdown
+      sanitize: false,    // We'll handle sanitization separately if needed
+      smartLists: true,   // Use smarter list behavior
+      smartypants: false, // Don't use smart quotes
+      xhtml: false        // Don't use XHTML-compliant tags
+    });
+  }
+
+  /**
+   * Parses Markdown content and converts it to HTML
+   * @param {string} markdownContent - The Markdown content to parse
+   * @returns {string} The generated HTML content
+   * @throws {Error} If parsing fails
+   */
+  function parseMarkdown(markdownContent) {
+    if (typeof markdownContent !== 'string') {
+      throw new Error('Markdown content must be a string');
+    }
+    
+    if (markdownContent.trim().length === 0) {
+      return '';
+    }
+    
+    try {
+      // Ensure marked is configured
+      configureMarkedOptions();
+      
+      // Parse the markdown content
+      const htmlContent = marked.parse(markdownContent);
+      
+      if (typeof htmlContent !== 'string') {
+        throw new Error('Marked.js returned non-string result');
+      }
+      
+      return htmlContent;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error parsing Markdown:', error);
+      throw new Error(`Failed to parse Markdown: ${error.message}`);
+    }
+  }
+
+  /**
+   * Wrapper function for safe Markdown parsing with error handling
+   * @param {string} content - The content to parse
+   * @returns {Object} Result object with success status and content/error
+   */
+  function safeParseMarkdown(content) {
+    try {
+      const htmlContent = parseMarkdown(content);
+      return {
+        success: true,
+        html: htmlContent,
+        error: null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        html: null,
+        error: error.message
+      };
+    }
+  }
+
+  /**
+   * Generates styled HTML with proper CSS classes and structure
+   * @param {string} htmlContent - The HTML content from Markdown parsing
+   * @returns {string} The styled HTML with wrapper elements
+   */
+  function generateStyledHTML(htmlContent) {
+    if (typeof htmlContent !== 'string') {
+      throw new Error('HTML content must be a string');
+    }
+    
+    // Create a wrapper div with styling classes
+    const styledHTML = `
+      <div class="slack-markdown-renderer-content">
+        <div class="markdown-body">
+          ${htmlContent}
+        </div>
+      </div>
+    `;
+    
+    return styledHTML;
+  }
+
+  /**
+   * Complete Markdown processing pipeline
+   * @param {string} markdownContent - The raw Markdown content
+   * @returns {Object} Processing result with HTML and metadata
+   */
+  function processMarkdownContent(markdownContent) {
+    const result = safeParseMarkdown(markdownContent);
+    
+    if (!result.success) {
+      return {
+        success: false,
+        html: null,
+        styledHTML: null,
+        error: result.error
+      };
+    }
+    
+    try {
+      const styledHTML = generateStyledHTML(result.html);
+      return {
+        success: true,
+        html: result.html,
+        styledHTML: styledHTML,
+        error: null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        html: result.html,
+        styledHTML: null,
+        error: `Failed to generate styled HTML: ${error.message}`
+      };
+    }
+  }
+
+  /**
+   * DOM Replacement and Content Management Functions
+   */
+  
+  // Global state for content management
+  let originalContentBackup = null;
+  let currentContentContainer = null;
+  let isContentReplaced = false;
+
+  /**
+   * Finds the main content container on the Slack RAW file page
+   * @returns {HTMLElement|null} The content container element
+   */
+  function findContentContainer() {
+    // Try multiple selectors to find the content container
+    const possibleSelectors = [
+      'pre', 
+      'code', 
+      '.file-content', 
+      '.raw-content',
+      '[data-qa="file_content"]', 
+      '.p-file_content',
+      '.c-file__content',
+      '.file_content'
+    ];
+    
+    for (const selector of possibleSelectors) {
+      const element = document.querySelector(selector);
+      if (element && element.textContent.trim()) {
+        return element;
+      }
+    }
+    
+    // Fallback: look for any element containing substantial text content
+    const allElements = document.querySelectorAll('*');
+    for (const element of allElements) {
+      if (element.children.length === 0 && 
+          element.textContent.trim().length > 100 &&
+          !element.closest('script') && 
+          !element.closest('style')) {
+        return element;
+      }
+    }
+    
+    return null;
+  }
+
+  /**
+   * Backs up the original content for toggle functionality
+   * @param {HTMLElement} container - The container element to backup
+   */
+  function backupOriginalContent(container) {
+    if (!container) {
+      throw new Error('Container element is required for backup');
+    }
+    
+    originalContentBackup = {
+      innerHTML: container.innerHTML,
+      textContent: container.textContent,
+      className: container.className,
+      tagName: container.tagName
+    };
+    
+    currentContentContainer = container;
+    console.log('Slack Markdown Renderer: Original content backed up');
+  }
+
+  /**
+   * Replaces the original content with rendered HTML
+   * @param {string} styledHTML - The styled HTML content to display
+   * @returns {boolean} True if replacement was successful
+   */
+  function replaceContentWithHTML(styledHTML) {
+    if (typeof styledHTML !== 'string' || styledHTML.trim().length === 0) {
+      throw new Error('Styled HTML content is required');
+    }
+    
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      throw new Error('Could not find content container for replacement');
+    }
+    
+    // Backup original content if not already done
+    if (!originalContentBackup) {
+      backupOriginalContent(container);
+    }
+    
+    try {
+      // Replace the content
+      container.innerHTML = styledHTML;
+      container.classList.add('slack-markdown-rendered');
+      isContentReplaced = true;
+      
+      console.log('Slack Markdown Renderer: Content successfully replaced with rendered HTML');
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error replacing content:', error);
+      throw new Error(`Failed to replace content: ${error.message}`);
+    }
+  }
+
+  /**
+   * Restores the original content from backup
+   * @returns {boolean} True if restoration was successful
+   */
+  function restoreOriginalContent() {
+    if (!originalContentBackup || !currentContentContainer) {
+      throw new Error('No backup available to restore');
+    }
+    
+    try {
+      currentContentContainer.innerHTML = originalContentBackup.innerHTML;
+      currentContentContainer.className = originalContentBackup.className;
+      currentContentContainer.classList.remove('slack-markdown-rendered');
+      isContentReplaced = false;
+      
+      console.log('Slack Markdown Renderer: Original content restored');
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error restoring content:', error);
+      throw new Error(`Failed to restore content: ${error.message}`);
+    }
+  }
+
+  /**
+   * Toggles between original and rendered content
+   * @param {string} mode - 'raw' for original content, 'rendered' for HTML content
+   * @param {string} styledHTML - The styled HTML content (required for 'rendered' mode)
+   * @returns {boolean} True if toggle was successful
+   */
+  function toggleContent(mode, styledHTML = null) {
+    if (mode !== 'raw' && mode !== 'rendered') {
+      throw new Error('Mode must be either "raw" or "rendered"');
+    }
+    
+    try {
+      if (mode === 'rendered') {
+        if (!styledHTML) {
+          throw new Error('Styled HTML is required for rendered mode');
+        }
+        return replaceContentWithHTML(styledHTML);
+      } else {
+        return restoreOriginalContent();
+      }
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error toggling content:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Gets the current content state
+   * @returns {Object} Current state information
+   */
+  function getContentState() {
+    return {
+      isReplaced: isContentReplaced,
+      hasBackup: !!originalContentBackup,
+      containerFound: !!currentContentContainer,
+      currentMode: isContentReplaced ? 'rendered' : 'raw'
+    };
+  }
+
+  /**
+   * Complete content replacement pipeline
+   * @param {string} styledHTML - The styled HTML to display
+   * @returns {Object} Replacement result with success status
+   */
+  function performContentReplacement(styledHTML) {
+    try {
+      const success = replaceContentWithHTML(styledHTML);
+      return {
+        success: success,
+        state: getContentState(),
+        error: null
+      };
+    } catch (error) {
+      return {
+        success: false,
+        state: getContentState(),
+        error: error.message
+      };
+    }
+  }
+
   // Initialize URL detection
   if (isSlackRawPage()) {
     console.log('Slack Markdown Renderer: Detected Slack RAW file page');
@@ -230,8 +550,26 @@
     });
     
     if (analysis.isMarkdown || isMarkdownExtension(fileExtension)) {
-      console.log('Slack Markdown Renderer: Markdown content detected, ready for rendering');
-      // Markdown parsing and rendering will be implemented in subsequent tasks
+      console.log('Slack Markdown Renderer: Markdown content detected, processing...');
+      
+      // Process the Markdown content
+      const processingResult = processMarkdownContent(content);
+      
+      if (processingResult.success) {
+        console.log('Slack Markdown Renderer: Markdown processing successful');
+        
+        // Replace content with rendered HTML
+        const replacementResult = performContentReplacement(processingResult.styledHTML);
+        
+        if (replacementResult.success) {
+          console.log('Slack Markdown Renderer: Content replacement successful');
+          console.log('Current state:', replacementResult.state);
+        } else {
+          console.error('Slack Markdown Renderer: Content replacement failed:', replacementResult.error);
+        }
+      } else {
+        console.error('Slack Markdown Renderer: Markdown processing failed:', processingResult.error);
+      }
     } else {
       console.log('Slack Markdown Renderer: No Markdown content detected');
     }
