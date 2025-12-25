@@ -145,8 +145,8 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 12: Loading State Management**
     - **Validates: Requirements 7.5**
 
-- [ ] 9. Final integration and testing
-  - [ ] 9.1 Wire all components together
+- [x] 9. Final integration and testing
+  - [x] 9.1 Wire all components together
     - Connect URL detection, content analysis, parsing, and rendering
     - Integrate toggle functionality and error handling
     - Test complete workflow from URL detection to rendering
@@ -157,7 +157,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Test various Markdown file types and content
     - _Requirements: All requirements_
 
-- [ ] 10. Final checkpoint - Ensure all tests pass
+- [x] 10. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
