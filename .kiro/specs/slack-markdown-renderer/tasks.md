@@ -34,11 +34,11 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Implement file extension checking
     - _Requirements: 1.3, 1.4, 4.1, 4.2, 4.3_
 
-  - [ ] 2.4 Write property test for content analysis
+  - [x] 2.4 Write property test for content analysis
     - **Property 2: Content Analysis Consistency**
     - **Validates: Requirements 1.3**
 
-  - [ ] 2.5 Write property test for Markdown detection
+  - [-] 2.5 Write property test for Markdown detection
     - **Property 3: Markdown Detection Accuracy**
     - **Validates: Requirements 1.4, 4.3**
 
