@@ -13,7 +13,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
   - Set up basic permissions and metadata
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ]* 1.1 Write unit test for manifest validation
+- [x] 1.1 Write unit test for manifest validation
   - Test manifest.json structure compliance with V3 specifications
   - Test permission configuration
   - _Requirements: 6.1, 6.2_
@@ -131,7 +131,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 7: Non-Markdown Content Preservation**
     - **Validates: Requirements 4.4**
 
-- [-] 8. Implement performance optimizations
+- [x] 8. Implement performance optimizations
   - [x] 8.1 Add non-blocking processing
     - Implement asynchronous processing for large content
     - Add loading indicators for long operations
@@ -141,7 +141,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 11: Non-Blocking Processing**
     - **Validates: Requirements 7.3**
 
-  - [x]* 8.3 Write property test for loading state management
+  - [ ]* 8.3 Write property test for loading state management
     - **Property 12: Loading State Management**
     - **Validates: Requirements 7.5**
 
@@ -152,7 +152,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Test complete workflow from URL detection to rendering
     - _Requirements: All requirements_
 
-  - [ ]* 9.2 Write integration tests
+  - [x] 9.2 Write integration tests
     - Test end-to-end functionality
     - Test various Markdown file types and content
     - _Requirements: All requirements_
