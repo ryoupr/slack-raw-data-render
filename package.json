@@ -1,0 +1,22 @@
+{
+  "name": "slack-markdown-renderer",
+  "version": "1.0.0",
+  "description": "Chrome extension to render Markdown content in Slack RAW file pages",
+  "main": "content-script.js",
+  "scripts": {
+    "test": "node test-core-functionality.js"
+  },
+  "devDependencies": {
+    "jsdom": "^23.0.0"
+  },
+  "keywords": [
+    "chrome-extension",
+    "markdown",
+    "slack"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "marked": "^17.0.1"
+  }
+}

@@ -160,7 +160,7 @@
     confidence = Math.min(confidence, 1.0);
     
     return {
-      isMarkdown: confidence > 0.3, // Threshold for Markdown detection
+      isMarkdown: confidence > 0.1, // Threshold for Markdown detection (lowered for better sensitivity)
       confidence: confidence,
       detectedFeatures: features,
       fileExtension: extractFileExtension()
