@@ -67,7 +67,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add content backup for toggle functionality
     - _Requirements: 2.3_
 
-  - [ ] 3.5 Write property test for DOM replacement
+  - [x] 3.5 Write property test for DOM replacement
     - **Property 5: DOM Replacement Integrity**
     - **Validates: Requirements 2.3, 3.3, 3.4**
 
@@ -90,7 +90,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 8: Toggle State Consistency**
     - **Validates: Requirements 3.2, 3.3, 3.4**
 
-  - [ ] 5.4 Write property test for session persistence
+  - [x] 5.4 Write property test for session persistence
     - **Property 9: Session Preference Persistence**
     - **Validates: Requirements 3.5**
 

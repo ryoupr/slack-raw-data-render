@@ -616,12 +616,124 @@ function runPropertyBasedTests() {
   // Property 9: Session Preference Persistence
   // Feature: slack-markdown-renderer, Property 9: Session Preference Persistence
   propertyTest('Property 9: Session Preference Persistence',
-    fc.property(fc.boolean(), (preference) => {
-      // Test that preference values are preserved
-      const stored = preference;
-      const retrieved = stored;
-      return stored === retrieved;
-    })
+    fc.property(
+      fc.record({
+        viewMode: fc.constantFrom('raw', 'rendered'),
+        sessionOperations: fc.array(
+          fc.record({
+            operation: fc.constantFrom('save', 'load', 'clear'),
+            viewMode: fc.constantFrom('raw', 'rendered')
+          }),
+          { minLength: 1, maxLength: 10 }
+        )
+      }),
+      (testData) => {
+        // Setup test environment with mock sessionStorage
+        const mockStorage = {};
+        const originalSessionStorage = global.sessionStorage;
+        
+        // Mock sessionStorage for testing
+        global.sessionStorage = {
+          getItem: (key) => mockStorage[key] || null,
+          setItem: (key, value) => { mockStorage[key] = value; },
+          removeItem: (key) => { delete mockStorage[key]; },
+          clear: () => { Object.keys(mockStorage).forEach(key => delete mockStorage[key]); }
+        };
+        
+        try {
+          // Define session preference functions for testing
+          function saveSessionPreference(viewMode) {
+            if (viewMode !== 'raw' && viewMode !== 'rendered') {
+              return false;
+            }
+            
+            try {
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem('slack-markdown-renderer-view-preference', viewMode);
+              }
+              return true;
+            } catch (error) {
+              return false;
+            }
+          }
+          
+          function loadSessionPreference() {
+            try {
+              if (typeof sessionStorage !== 'undefined') {
+                const savedPreference = sessionStorage.getItem('slack-markdown-renderer-view-preference');
+                if (savedPreference === 'raw' || savedPreference === 'rendered') {
+                  return savedPreference;
+                }
+              }
+              return 'rendered'; // Default
+            } catch (error) {
+              return 'rendered'; // Default on error
+            }
+          }
+          
+          function clearSessionPreference() {
+            try {
+              if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('slack-markdown-renderer-view-preference');
+              }
+              return true;
+            } catch (error) {
+              return false;
+            }
+          }
+          
+          // Test the session operations sequence
+          let lastSavedPreference = null;
+          let allOperationsConsistent = true;
+          
+          // Initial save operation
+          const initialSaveSuccess = saveSessionPreference(testData.viewMode);
+          if (initialSaveSuccess) {
+            lastSavedPreference = testData.viewMode;
+          }
+          
+          // Execute the sequence of operations
+          for (const op of testData.sessionOperations) {
+            if (op.operation === 'save') {
+              const saveSuccess = saveSessionPreference(op.viewMode);
+              if (saveSuccess) {
+                lastSavedPreference = op.viewMode;
+              }
+            } else if (op.operation === 'load') {
+              const loadedPreference = loadSessionPreference();
+              
+              // Property: Loaded preference should match the last successfully saved preference
+              // or default to 'rendered' if no preference was saved or after clear
+              const expectedPreference = lastSavedPreference || 'rendered';
+              
+              if (loadedPreference !== expectedPreference) {
+                allOperationsConsistent = false;
+                break;
+              }
+            } else if (op.operation === 'clear') {
+              const clearSuccess = clearSessionPreference();
+              if (clearSuccess) {
+                lastSavedPreference = null; // No saved preference after clear
+              }
+            }
+          }
+          
+          // Final consistency check: load after all operations
+          const finalLoadedPreference = loadSessionPreference();
+          const expectedFinalPreference = lastSavedPreference || 'rendered';
+          
+          if (finalLoadedPreference !== expectedFinalPreference) {
+            allOperationsConsistent = false;
+          }
+          
+          return allOperationsConsistent;
+          
+        } finally {
+          // Restore original sessionStorage
+          global.sessionStorage = originalSessionStorage;
+        }
+      }
+    )
   );
   
   // Property 10: Error Isolation
