@@ -141,7 +141,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 11: Non-Blocking Processing**
     - **Validates: Requirements 7.3**
 
-  - [ ]* 8.3 Write property test for loading state management
+  - [x]* 8.3 Write property test for loading state management
     - **Property 12: Loading State Management**
     - **Validates: Requirements 7.5**
 
