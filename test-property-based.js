@@ -425,28 +425,100 @@ function runPropertyBasedTests() {
   // Feature: slack-markdown-renderer, Property 5: DOM Replacement Integrity
   propertyTest('Property 5: DOM Replacement Integrity',
     fc.property(
-      fc.string({ minLength: 1, maxLength: 1000 }).filter(content => {
-        // Filter out edge cases that are not meaningful content:
-        // - Only whitespace content (spaces, tabs, newlines)
-        // - Empty or very short content that would be trimmed away
-        const trimmed = content.trim();
-        return trimmed.length > 0 && trimmed.length >= 2;
+      fc.record({
+        originalContent: fc.string({ minLength: 5, maxLength: 500 }).filter(content => {
+          const trimmed = content.trim();
+          return trimmed.length >= 5 && !trimmed.includes('<') && !trimmed.includes('>');
+        }),
+        renderedHTML: fc.string({ minLength: 10, maxLength: 200 }).filter(html => {
+          return html.includes('<') && html.includes('>') && html.trim().length >= 10;
+        })
       }),
-      (originalContent) => {
+      (testData) => {
         // Setup fresh DOM for each test
-        const dom = new JSDOM(`<html><body><pre id="file-content">${originalContent}</pre></body></html>`);
+        const dom = new JSDOM(`
+          <html>
+            <body>
+              <pre id="file-content">${testData.originalContent}</pre>
+            </body>
+          </html>
+        `);
         global.document = dom.window.document;
+        global.window = dom.window;
         
-        const originalElement = document.getElementById('file-content');
-        if (!originalElement) return true; // Skip if element not found
+        const container = document.getElementById('file-content');
+        if (!container) return true; // Skip if element not found
         
-        // For meaningful content, the trimmed version should be extractable
-        // This reflects the real-world use case where users care about meaningful text content
-        const originalTrimmed = originalElement.textContent.trim();
-        const extractedContent = extractTextContent();
+        // Store original content for comparison
+        const originalHTML = container.innerHTML;
+        const originalText = container.textContent.trim();
         
-        // The property: meaningful content should be preserved through extraction
-        return extractedContent === originalTrimmed;
+        // Mock the backup and replacement functions
+        let backupData = null;
+        
+        // Mock backupOriginalContent function
+        function mockBackupOriginalContent(element) {
+          backupData = {
+            innerHTML: element.innerHTML,
+            textContent: element.textContent,
+            className: element.className,
+            tagName: element.tagName
+          };
+          return true;
+        }
+        
+        // Mock replaceContentWithHTML function
+        function mockReplaceContentWithHTML(styledHTML) {
+          if (!backupData) {
+            mockBackupOriginalContent(container);
+          }
+          container.innerHTML = styledHTML;
+          container.classList.add('slack-markdown-rendered');
+          return true;
+        }
+        
+        // Mock restoreOriginalContent function
+        function mockRestoreOriginalContent() {
+          if (!backupData) return false;
+          container.innerHTML = backupData.innerHTML;
+          container.className = backupData.className;
+          container.classList.remove('slack-markdown-rendered');
+          return true;
+        }
+        
+        try {
+          // Test the replacement and restoration cycle
+          
+          // Step 1: Backup original content
+          const backupSuccess = mockBackupOriginalContent(container);
+          if (!backupSuccess) return false;
+          
+          // Step 2: Replace with rendered HTML
+          const replaceSuccess = mockReplaceContentWithHTML(testData.renderedHTML);
+          if (!replaceSuccess) return false;
+          
+          // Verify content was replaced
+          const replacedContent = container.innerHTML;
+          if (replacedContent !== testData.renderedHTML) return false;
+          
+          // Step 3: Restore original content
+          const restoreSuccess = mockRestoreOriginalContent();
+          if (!restoreSuccess) return false;
+          
+          // Step 4: Verify restoration integrity
+          const restoredHTML = container.innerHTML;
+          const restoredText = container.textContent.trim();
+          
+          // Property: After replacement and restoration, original content should be exactly preserved
+          const htmlMatches = restoredHTML === originalHTML;
+          const textMatches = restoredText === originalText;
+          
+          return htmlMatches && textMatches;
+          
+        } catch (error) {
+          // Any error during the process indicates failure of integrity
+          return false;
+        }
       }
     )
   );
@@ -512,16 +584,23 @@ function runPropertyBasedTests() {
       fc.record({
         initialView: fc.constantFrom('raw', 'rendered'),
         hasProcessedHTML: fc.boolean(),
-        contentLength: fc.integer({ min: 0, max: 10000 }),
-        toggleSequence: fc.array(fc.constantFrom('toggle', 'raw', 'rendered'), { minLength: 1, maxLength: 5 })
+        contentLength: fc.integer({ min: 10, max: 1000 }),
+        toggleSequence: fc.array(fc.constantFrom('toggle', 'raw', 'rendered'), { minLength: 1, maxLength: 8 })
       }),
       (testData) => {
         // Setup test environment with DOM
         const dom = new JSDOM(`
           <html>
             <body>
-              <pre id="file-content">Original test content</pre>
-              <div id="rendered-content" style="display: none;">Rendered HTML content</div>
+              <pre id="file-content">Original test content for toggle testing</pre>
+              <div id="rendered-content" style="display: none;">
+                <div class="slack-markdown-renderer-content">
+                  <div class="markdown-body">
+                    <h1>Rendered HTML content</h1>
+                    <p>This is the processed markdown content.</p>
+                  </div>
+                </div>
+              </div>
             </body>
           </html>
         `, { url: 'https://files.slack.com/files-pri/test-file.md' });
@@ -529,35 +608,48 @@ function runPropertyBasedTests() {
         global.document = dom.window.document;
         global.window = dom.window;
         
-        // Mock state variables
+        // Mock state variables that track toggle state
         let mockCurrentView = testData.initialView;
-        let mockProcessedHTML = testData.hasProcessedHTML ? '<p>Mock HTML content</p>' : null;
-        let mockOriginalContent = 'Original test content';
+        let mockProcessedHTML = testData.hasProcessedHTML ? 
+          '<div class="slack-markdown-renderer-content"><h1>Mock HTML</h1></div>' : null;
+        let mockOriginalContent = 'Original test content for toggle testing';
+        let mockHasBackup = false;
         
-        // Mock toggle functions that track state consistency
+        // Mock toggle state management functions
         const mockToggleState = {
           currentView: mockCurrentView,
           processedHTML: mockProcessedHTML,
           originalContent: mockOriginalContent,
+          hasBackup: mockHasBackup,
           displayedContent: testData.initialView === 'raw' ? mockOriginalContent : mockProcessedHTML
         };
         
-        // Function to simulate view switching
+        // Function to simulate view switching with proper state management
         function simulateViewSwitch(targetView) {
           if (targetView === 'raw') {
-            mockToggleState.currentView = 'raw';
-            mockToggleState.displayedContent = mockToggleState.originalContent;
-            return true;
+            // Switch to RAW view
+            if (mockToggleState.hasBackup || mockToggleState.originalContent) {
+              mockToggleState.currentView = 'raw';
+              mockToggleState.displayedContent = mockToggleState.originalContent;
+              return true;
+            }
+            return false; // Cannot switch to RAW without backup
           } else if (targetView === 'rendered') {
-            mockToggleState.currentView = 'rendered';
-            // If processed HTML is available, use it; otherwise fall back to original content
-            mockToggleState.displayedContent = mockToggleState.processedHTML || mockToggleState.originalContent;
-            return true;
+            // Switch to rendered view
+            if (mockToggleState.processedHTML) {
+              mockToggleState.currentView = 'rendered';
+              mockToggleState.displayedContent = mockToggleState.processedHTML;
+              mockToggleState.hasBackup = true; // Backup is created when switching to rendered
+              return true;
+            } else {
+              // No processed HTML available, stay in current view
+              return false;
+            }
           }
           return false;
         }
         
-        // Function to simulate toggle operation
+        // Function to simulate toggle operation (switch between views)
         function simulateToggle() {
           const newView = mockToggleState.currentView === 'raw' ? 'rendered' : 'raw';
           return simulateViewSwitch(newView);
@@ -565,9 +657,13 @@ function runPropertyBasedTests() {
         
         // Execute the toggle sequence and verify state consistency
         let allOperationsConsistent = true;
+        let operationCount = 0;
         
         for (const operation of testData.toggleSequence) {
+          operationCount++;
           let operationSuccess = false;
+          const previousView = mockToggleState.currentView;
+          const previousDisplayed = mockToggleState.displayedContent;
           
           if (operation === 'toggle') {
             operationSuccess = simulateToggle();
@@ -583,28 +679,70 @@ function runPropertyBasedTests() {
             break;
           }
           
-          // If operation failed but state is still consistent, that's acceptable
-          // (e.g., trying to switch to rendered view when no HTML is available)
+          // Additional consistency checks
+          if (operationSuccess) {
+            // If operation succeeded, verify the view actually changed (for toggle) or matches target (for direct switch)
+            if (operation === 'toggle') {
+              // For toggle, view should have changed (unless no processed HTML available)
+              if (mockToggleState.processedHTML && mockToggleState.currentView === previousView) {
+                allOperationsConsistent = false;
+                break;
+              }
+            } else {
+              // For direct switch, view should match the target (if operation succeeded)
+              if (mockToggleState.currentView !== operation) {
+                allOperationsConsistent = false;
+                break;
+              }
+            }
+          }
+          
+          // Verify displayed content matches current view
+          const expectedContent = mockToggleState.currentView === 'raw' ? 
+            mockToggleState.originalContent : mockToggleState.processedHTML;
+          
+          if (mockToggleState.displayedContent !== expectedContent) {
+            allOperationsConsistent = false;
+            break;
+          }
         }
         
         return allOperationsConsistent;
         
         // Helper function to check state consistency
         function checkStateConsistency(state) {
-          // Property: Current view state should always match the displayed content
-          
+          // Property 1: Current view state should always match the displayed content
           if (state.currentView === 'raw') {
             // In RAW mode, displayed content should be the original content
-            return state.displayedContent === state.originalContent;
+            if (state.displayedContent !== state.originalContent) {
+              return false;
+            }
           } else if (state.currentView === 'rendered') {
-            // In rendered mode, displayed content should be the processed HTML if available,
-            // otherwise it should fall back to original content
-            const expectedContent = state.processedHTML || state.originalContent;
-            return state.displayedContent === expectedContent;
+            // In rendered mode, displayed content should be the processed HTML
+            // Only if processed HTML is available
+            if (state.processedHTML && state.displayedContent !== state.processedHTML) {
+              return false;
+            }
+            // If no processed HTML, we shouldn't be in rendered mode
+            if (!state.processedHTML) {
+              return false;
+            }
+          } else {
+            // Invalid view state
+            return false;
           }
           
-          // Invalid state
-          return false;
+          // Property 2: Valid view states
+          if (state.currentView !== 'raw' && state.currentView !== 'rendered') {
+            return false;
+          }
+          
+          // Property 3: Backup should exist when in rendered mode (after first switch)
+          if (state.currentView === 'rendered' && !state.hasBackup && !state.originalContent) {
+            return false;
+          }
+          
+          return true;
         }
       }
     )

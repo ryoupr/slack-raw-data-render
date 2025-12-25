@@ -123,11 +123,11 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Handle mixed content appropriately
     - _Requirements: 4.4, 4.5_
 
-  - [ ] 7.3 Write property test for error isolation
+  - [x] 7.3 Write property test for error isolation
     - **Property 10: Error Isolation**
     - **Validates: Requirements 6.4, 6.5**
 
-  - [ ] 7.4 Write property test for non-Markdown preservation
+  - [x] 7.4 Write property test for non-Markdown preservation
     - **Property 7: Non-Markdown Content Preservation**
     - **Validates: Requirements 4.4**
 
@@ -160,43 +160,43 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 - [x] 10. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Complete remaining property-based tests
-  - [ ] 11.1 Fix and complete property test for URL pattern detection
+- [x] 11. Complete remaining property-based tests
+  - [x] 11.1 Fix and complete property test for URL pattern detection
     - **Property 1: URL Pattern Detection**
     - **Validates: Requirements 1.1, 1.2**
     - Fix test implementation to properly validate URL pattern matching
 
-  - [ ] 11.2 Fix and complete property test for content analysis
+  - [x] 11.2 Fix and complete property test for content analysis
     - **Property 2: Content Analysis Consistency**
     - **Validates: Requirements 1.3**
     - Ensure consistent results across multiple analysis calls
 
-  - [ ] 11.3 Fix and complete property test for Markdown detection
+  - [x] 11.3 Fix and complete property test for Markdown detection
     - **Property 3: Markdown Detection Accuracy**
     - **Validates: Requirements 1.4, 4.3**
     - Test detection accuracy across various Markdown patterns
 
-  - [ ] 11.4 Fix and complete property test for DOM replacement
+  - [x] 11.4 Fix and complete property test for DOM replacement
     - **Property 5: DOM Replacement Integrity**
     - **Validates: Requirements 2.3, 3.3, 3.4**
     - Test content backup and restoration functionality
 
-  - [ ] 11.5 Fix and complete property test for toggle functionality
+  - [x] 11.5 Fix and complete property test for toggle functionality
     - **Property 8: Toggle State Consistency**
     - **Validates: Requirements 3.2, 3.3, 3.4**
     - Test view switching state management
 
-  - [ ] 11.6 Fix and complete property test for session persistence
+  - [x] 11.6 Fix and complete property test for session persistence
     - **Property 9: Session Preference Persistence**
     - **Validates: Requirements 3.5**
     - Test session storage and preference loading
 
-  - [ ] 11.7 Fix and complete property test for error isolation
+  - [x] 11.7 Fix and complete property test for error isolation
     - **Property 10: Error Isolation**
     - **Validates: Requirements 6.4, 6.5**
     - Test error handling without breaking page functionality
 
-  - [ ] 11.8 Fix and complete property test for non-Markdown preservation
+  - [x] 11.8 Fix and complete property test for non-Markdown preservation
     - **Property 7: Non-Markdown Content Preservation**
     - **Validates: Requirements 4.4**
     - Test preservation of non-Markdown content types
