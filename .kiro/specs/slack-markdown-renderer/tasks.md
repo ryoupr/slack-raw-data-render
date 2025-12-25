@@ -6,7 +6,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 
 ## Tasks
 
-- [ ] 1. Set up Chrome extension project structure and manifest
+- [x] 1. Set up Chrome extension project structure and manifest
   - Create project directory structure
   - Create manifest.json with Manifest V3 format
   - Configure content scripts for Slack RAW file URLs
@@ -18,8 +18,8 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
   - Test permission configuration
   - _Requirements: 6.1, 6.2_
 
-- [ ] 2. Implement URL detection and content analysis
-  - [ ] 2.1 Create URL pattern matching functionality
+- [x] 2. Implement URL detection and content analysis
+  - [x] 2.1 Create URL pattern matching functionality
     - Implement function to detect Slack RAW file URLs
     - Add URL validation logic
     - _Requirements: 1.1, 1.2_
@@ -28,7 +28,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 1: URL Pattern Detection**
     - **Validates: Requirements 1.1, 1.2**
 
-  - [ ] 2.3 Implement content analysis system
+  - [x] 2.3 Implement content analysis system
     - Create content type detection logic
     - Add Markdown pattern recognition
     - Implement file extension checking
@@ -46,13 +46,13 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 6: File Extension Recognition**
     - **Validates: Requirements 4.1, 4.2**
 
-- [ ] 3. Integrate Markdown parser and rendering system
-  - [ ] 3.1 Add Marked.js library to project
+- [x] 3. Integrate Markdown parser and rendering system
+  - [x] 3.1 Add Marked.js library to project
     - Download and include Marked.js library
     - Configure library options for security and features
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 3.2 Implement Markdown parsing functionality
+  - [x] 3.2 Implement Markdown parsing functionality
     - Create wrapper functions for Marked.js
     - Add error handling for parsing failures
     - Implement HTML generation with styling
@@ -62,7 +62,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 4: Markdown Parsing Round Trip**
     - **Validates: Requirements 2.1, 2.2**
 
-  - [ ] 3.4 Implement DOM replacement system
+  - [x] 3.4 Implement DOM replacement system
     - Create functions to replace original content with rendered HTML
     - Add content backup for toggle functionality
     - _Requirements: 2.3_
@@ -71,16 +71,16 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 5: DOM Replacement Integrity**
     - **Validates: Requirements 2.3, 3.3, 3.4**
 
-- [ ] 4. Checkpoint - Ensure core functionality works
+- [x] 4. Checkpoint - Ensure core functionality works
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement toggle functionality and UI controls
-  - [ ] 5.1 Create toggle button UI component
+- [x] 5. Implement toggle functionality and UI controls
+  - [x] 5.1 Create toggle button UI component
     - Design and implement toggle button
     - Add button styling and positioning
     - _Requirements: 3.1_
 
-  - [ ] 5.2 Implement view switching logic
+  - [x] 5.2 Implement view switching logic
     - Create functions to switch between RAW and rendered views
     - Add state management for current view
     - Implement session preference persistence

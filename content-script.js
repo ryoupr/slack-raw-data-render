@@ -532,6 +532,327 @@
     }
   }
 
+  /**
+   * Toggle Button and UI Control Functions
+   */
+  
+  // Global state for toggle functionality
+  let toggleButton = null;
+  let currentView = 'raw'; // 'raw' or 'rendered'
+  let sessionPreferences = {
+    defaultView: 'rendered',
+    rememberPreference: true
+  };
+
+  /**
+   * Creates and returns a toggle button element
+   * @returns {HTMLElement} The created toggle button element
+   */
+  function createToggleButton() {
+    // Remove existing button if present
+    if (toggleButton && toggleButton.parentNode) {
+      toggleButton.parentNode.removeChild(toggleButton);
+    }
+    
+    // Create the button element
+    const button = document.createElement('button');
+    button.className = 'slack-markdown-toggle-button rendered-mode';
+    button.textContent = 'Show RAW';
+    button.title = 'Toggle between RAW text and rendered Markdown';
+    button.setAttribute('aria-label', 'Toggle between RAW text and rendered Markdown view');
+    button.setAttribute('role', 'button');
+    button.setAttribute('tabindex', '0');
+    
+    // Add click event listener
+    button.addEventListener('click', handleToggleClick);
+    
+    // Add keyboard support
+    button.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleToggleClick();
+      }
+    });
+    
+    // Store reference
+    toggleButton = button;
+    
+    console.log('Slack Markdown Renderer: Toggle button created');
+    return button;
+  }
+
+  /**
+   * Updates the toggle button appearance and text based on current view
+   * @param {string} mode - The current view mode ('raw' or 'rendered')
+   */
+  function updateToggleButton(mode) {
+    if (!toggleButton) {
+      console.warn('Slack Markdown Renderer: Toggle button not found for update');
+      return;
+    }
+    
+    // Update button class and text based on mode
+    if (mode === 'raw') {
+      toggleButton.className = 'slack-markdown-toggle-button raw-mode';
+      toggleButton.textContent = 'Show Rendered';
+      toggleButton.title = 'Switch to rendered Markdown view';
+      toggleButton.setAttribute('aria-label', 'Switch to rendered Markdown view');
+    } else {
+      toggleButton.className = 'slack-markdown-toggle-button rendered-mode';
+      toggleButton.textContent = 'Show RAW';
+      toggleButton.title = 'Switch to RAW text view';
+      toggleButton.setAttribute('aria-label', 'Switch to RAW text view');
+    }
+    
+    currentView = mode;
+    console.log(`Slack Markdown Renderer: Toggle button updated to ${mode} mode`);
+  }
+
+  /**
+   * Adds the toggle button to the page
+   * @returns {boolean} True if button was successfully added
+   */
+  function addToggleButtonToPage() {
+    if (!toggleButton) {
+      console.error('Slack Markdown Renderer: No toggle button to add to page');
+      return false;
+    }
+    
+    try {
+      // Add button to the document body
+      document.body.appendChild(toggleButton);
+      console.log('Slack Markdown Renderer: Toggle button added to page');
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error adding toggle button to page:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Removes the toggle button from the page
+   * @returns {boolean} True if button was successfully removed
+   */
+  function removeToggleButtonFromPage() {
+    if (toggleButton && toggleButton.parentNode) {
+      try {
+        toggleButton.parentNode.removeChild(toggleButton);
+        console.log('Slack Markdown Renderer: Toggle button removed from page');
+        return true;
+      } catch (error) {
+        console.error('Slack Markdown Renderer: Error removing toggle button:', error);
+        return false;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * View Switching and State Management Functions
+   */
+  
+  // Global state for processed content
+  let processedMarkdownHTML = null;
+
+  /**
+   * Switches to the RAW text view
+   * @returns {boolean} True if switch was successful
+   */
+  function switchToRawView() {
+    try {
+      const success = restoreOriginalContent();
+      if (success) {
+        updateToggleButton('raw');
+        saveSessionPreference('raw');
+        console.log('Slack Markdown Renderer: Switched to RAW view');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error switching to RAW view:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Switches to the rendered Markdown view
+   * @returns {boolean} True if switch was successful
+   */
+  function switchToRenderedView() {
+    if (!processedMarkdownHTML) {
+      console.error('Slack Markdown Renderer: No processed HTML available for rendered view');
+      return false;
+    }
+    
+    try {
+      const success = replaceContentWithHTML(processedMarkdownHTML);
+      if (success) {
+        updateToggleButton('rendered');
+        saveSessionPreference('rendered');
+        console.log('Slack Markdown Renderer: Switched to rendered view');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error switching to rendered view:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Toggles between RAW and rendered views
+   * @returns {boolean} True if toggle was successful
+   */
+  function toggleView() {
+    if (currentView === 'raw') {
+      return switchToRenderedView();
+    } else {
+      return switchToRawView();
+    }
+  }
+
+  /**
+   * Session Preference Management Functions
+   */
+  
+  /**
+   * Saves user preference for the current session
+   * @param {string} viewMode - The preferred view mode ('raw' or 'rendered')
+   */
+  function saveSessionPreference(viewMode) {
+    if (viewMode !== 'raw' && viewMode !== 'rendered') {
+      console.warn('Slack Markdown Renderer: Invalid view mode for session preference:', viewMode);
+      return;
+    }
+    
+    try {
+      // Use sessionStorage to persist preference for the current session
+      sessionStorage.setItem('slack-markdown-renderer-view-preference', viewMode);
+      sessionPreferences.defaultView = viewMode;
+      console.log(`Slack Markdown Renderer: Session preference saved: ${viewMode}`);
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not save session preference:', error);
+    }
+  }
+
+  /**
+   * Loads user preference from the current session
+   * @returns {string} The saved view preference or default
+   */
+  function loadSessionPreference() {
+    try {
+      const savedPreference = sessionStorage.getItem('slack-markdown-renderer-view-preference');
+      if (savedPreference === 'raw' || savedPreference === 'rendered') {
+        sessionPreferences.defaultView = savedPreference;
+        console.log(`Slack Markdown Renderer: Session preference loaded: ${savedPreference}`);
+        return savedPreference;
+      }
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not load session preference:', error);
+    }
+    
+    // Return default preference
+    return sessionPreferences.defaultView;
+  }
+
+  /**
+   * Clears session preferences
+   */
+  function clearSessionPreference() {
+    try {
+      sessionStorage.removeItem('slack-markdown-renderer-view-preference');
+      sessionPreferences.defaultView = 'rendered'; // Reset to default
+      console.log('Slack Markdown Renderer: Session preference cleared');
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not clear session preference:', error);
+    }
+  }
+
+  /**
+   * Gets current session preferences
+   * @returns {Object} Current session preferences
+   */
+  function getSessionPreferences() {
+    return {
+      defaultView: sessionPreferences.defaultView,
+      rememberPreference: sessionPreferences.rememberPreference,
+      currentSession: loadSessionPreference()
+    };
+  }
+
+  /**
+   * State Management Functions
+   */
+  
+  /**
+   * Gets comprehensive current state of the extension
+   * @returns {Object} Complete state information
+   */
+  function getCurrentState() {
+    return {
+      page: {
+        isSlackRawPage: isSlackRawPage(),
+        url: window.location.href
+      },
+      content: getContentState(),
+      toggle: getToggleButtonState(),
+      view: {
+        currentView: currentView,
+        hasProcessedHTML: !!processedMarkdownHTML
+      },
+      preferences: getSessionPreferences()
+    };
+  }
+
+  /**
+   * Initializes the extension with user preferences
+   * @param {string} preferredView - The preferred initial view
+   */
+  function initializeWithPreferences(preferredView = null) {
+    // Load session preference if no preference specified
+    const initialView = preferredView || loadSessionPreference();
+    
+    console.log(`Slack Markdown Renderer: Initializing with preferred view: ${initialView}`);
+    
+    // Set the initial view based on preference
+    if (initialView === 'raw' && currentView === 'rendered') {
+      // Switch to RAW view if that's the preference
+      switchToRawView();
+    } else if (initialView === 'rendered' && currentView === 'raw') {
+      // Switch to rendered view if that's the preference
+      switchToRenderedView();
+    }
+    
+    // Update session preference
+    saveSessionPreference(currentView);
+  }
+
+  /**
+   * Handles toggle button click events
+   */
+  function handleToggleClick() {
+    console.log('Slack Markdown Renderer: Toggle button clicked, current view:', currentView);
+    
+    const success = toggleView();
+    if (!success) {
+      console.error('Slack Markdown Renderer: Failed to toggle view');
+      // Could show user notification here in the future
+    }
+  }
+
+  /**
+   * Gets the current toggle button state
+   * @returns {Object} Current button state information
+   */
+  function getToggleButtonState() {
+    return {
+      exists: !!toggleButton,
+      isAttached: !!(toggleButton && toggleButton.parentNode),
+      currentView: currentView,
+      buttonText: toggleButton ? toggleButton.textContent : null
+    };
+  }
+
   // Initialize URL detection
   if (isSlackRawPage()) {
     console.log('Slack Markdown Renderer: Detected Slack RAW file page');
@@ -558,12 +879,32 @@
       if (processingResult.success) {
         console.log('Slack Markdown Renderer: Markdown processing successful');
         
+        // Store processed HTML for toggle functionality
+        processedMarkdownHTML = processingResult.styledHTML;
+        
         // Replace content with rendered HTML
         const replacementResult = performContentReplacement(processingResult.styledHTML);
         
         if (replacementResult.success) {
           console.log('Slack Markdown Renderer: Content replacement successful');
           console.log('Current state:', replacementResult.state);
+          
+          // Create and add toggle button
+          const button = createToggleButton();
+          const buttonAdded = addToggleButtonToPage();
+          
+          if (buttonAdded) {
+            // Set initial view to rendered mode
+            updateToggleButton('rendered');
+            
+            // Initialize with user preferences
+            initializeWithPreferences();
+            
+            console.log('Slack Markdown Renderer: Toggle button successfully added');
+            console.log('Final state:', getCurrentState());
+          } else {
+            console.error('Slack Markdown Renderer: Failed to add toggle button to page');
+          }
         } else {
           console.error('Slack Markdown Renderer: Content replacement failed:', replacementResult.error);
         }
