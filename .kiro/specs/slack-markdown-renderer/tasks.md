@@ -24,7 +24,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add URL validation logic
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 2.2 Write property test for URL pattern detection
+  - [x] 2.2 Write property test for URL pattern detection
     - **Property 1: URL Pattern Detection**
     - **Validates: Requirements 1.1, 1.2**
 
