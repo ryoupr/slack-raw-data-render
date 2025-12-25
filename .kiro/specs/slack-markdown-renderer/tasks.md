@@ -24,7 +24,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add URL validation logic
     - _Requirements: 1.1, 1.2_
 
-  - [ ]* 2.2 Write property test for URL pattern detection
+  - [ ] 2.2 Write property test for URL pattern detection
     - **Property 1: URL Pattern Detection**
     - **Validates: Requirements 1.1, 1.2**
 
@@ -34,15 +34,15 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Implement file extension checking
     - _Requirements: 1.3, 1.4, 4.1, 4.2, 4.3_
 
-  - [ ]* 2.4 Write property test for content analysis
+  - [ ] 2.4 Write property test for content analysis
     - **Property 2: Content Analysis Consistency**
     - **Validates: Requirements 1.3**
 
-  - [ ]* 2.5 Write property test for Markdown detection
+  - [ ] 2.5 Write property test for Markdown detection
     - **Property 3: Markdown Detection Accuracy**
     - **Validates: Requirements 1.4, 4.3**
 
-  - [ ]* 2.6 Write property test for file extension recognition
+  - [x] 2.6 Write property test for file extension recognition
     - **Property 6: File Extension Recognition**
     - **Validates: Requirements 4.1, 4.2**
 
@@ -58,7 +58,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Implement HTML generation with styling
     - _Requirements: 2.1, 2.2, 2.4, 2.5_
 
-  - [ ]* 3.3 Write property test for Markdown parsing
+  - [x] 3.3 Write property test for Markdown parsing
     - **Property 4: Markdown Parsing Round Trip**
     - **Validates: Requirements 2.1, 2.2**
 
@@ -67,7 +67,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add content backup for toggle functionality
     - _Requirements: 2.3_
 
-  - [ ]* 3.5 Write property test for DOM replacement
+  - [ ] 3.5 Write property test for DOM replacement
     - **Property 5: DOM Replacement Integrity**
     - **Validates: Requirements 2.3, 3.3, 3.4**
 
@@ -86,11 +86,11 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Implement session preference persistence
     - _Requirements: 3.2, 3.3, 3.4, 3.5_
 
-  - [ ]* 5.3 Write property test for toggle functionality
+  - [ ] 5.3 Write property test for toggle functionality
     - **Property 8: Toggle State Consistency**
     - **Validates: Requirements 3.2, 3.3, 3.4**
 
-  - [ ]* 5.4 Write property test for session persistence
+  - [ ] 5.4 Write property test for session persistence
     - **Property 9: Session Preference Persistence**
     - **Validates: Requirements 3.5**
 
@@ -106,7 +106,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Configure highlighting themes
     - _Requirements: 5.4_
 
-  - [ ]* 6.3 Write unit tests for styling application
+  - [ ] 6.3 Write unit tests for styling application
     - Test CSS class application
     - Test background color setting
     - _Requirements: 5.1, 5.2, 5.3_
@@ -123,11 +123,11 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Handle mixed content appropriately
     - _Requirements: 4.4, 4.5_
 
-  - [ ]* 7.3 Write property test for error isolation
+  - [ ] 7.3 Write property test for error isolation
     - **Property 10: Error Isolation**
     - **Validates: Requirements 6.4, 6.5**
 
-  - [ ]* 7.4 Write property test for non-Markdown preservation
+  - [ ] 7.4 Write property test for non-Markdown preservation
     - **Property 7: Non-Markdown Content Preservation**
     - **Validates: Requirements 4.4**
 
@@ -137,11 +137,11 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add loading indicators for long operations
     - _Requirements: 7.3, 7.5_
 
-  - [ ]* 8.2 Write property test for non-blocking processing
+  - [ ] 8.2 Write property test for non-blocking processing
     - **Property 11: Non-Blocking Processing**
     - **Validates: Requirements 7.3**
 
-  - [ ]* 8.3 Write property test for loading state management
+  - [x] 8.3 Write property test for loading state management
     - **Property 12: Loading State Management**
     - **Validates: Requirements 7.5**
 

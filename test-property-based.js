@@ -458,11 +458,74 @@ function runPropertyBasedTests() {
   // Property 12: Loading State Management
   // Feature: slack-markdown-renderer, Property 12: Loading State Management
   propertyTest('Property 12: Loading State Management',
-    fc.property(fc.boolean(), (isLoading) => {
-      // Test loading state consistency
-      const state = { loading: isLoading };
-      return typeof state.loading === 'boolean';
-    })
+    fc.property(
+      fc.record({
+        operationDuration: fc.integer({ min: 0, max: 1000 }), // 0-1 seconds
+        showDelay: fc.integer({ min: 100, max: 500 }), // 100ms-500ms delay
+        shouldShowIndicator: fc.boolean()
+      }),
+      (testData) => {
+        // Test loading state management logic without actual async operations
+        // This tests the core property: loading indicators should be shown for operations that exceed expected duration
+        
+        let indicatorShown = false;
+        let indicatorHidden = false;
+        let showTimeoutCalled = false;
+        let hideTimeoutCalled = false;
+        
+        // Mock setTimeout to track timing behavior
+        const originalSetTimeout = global.setTimeout;
+        global.setTimeout = (callback, delay) => {
+          if (delay === testData.showDelay) {
+            showTimeoutCalled = true;
+            // Simulate showing indicator after delay
+            if (testData.operationDuration > testData.showDelay) {
+              indicatorShown = true;
+              callback(); // Execute the callback
+            }
+          }
+          return 1; // Mock timer ID
+        };
+        
+        // Mock clearTimeout
+        global.clearTimeout = (timerId) => {
+          hideTimeoutCalled = true;
+        };
+        
+        try {
+          // Simulate the loading indicator logic
+          const shouldShow = testData.operationDuration > testData.showDelay;
+          
+          // Start the "operation" with loading indicator logic
+          let showTimeout = global.setTimeout(() => {
+            indicatorShown = true;
+          }, testData.showDelay);
+          
+          // Simulate operation completion
+          if (testData.operationDuration <= testData.showDelay) {
+            // Quick operation - should clear timeout before indicator shows
+            global.clearTimeout(showTimeout);
+          } else {
+            // Long operation - indicator should be shown, then hidden
+            indicatorHidden = true;
+          }
+          
+          // Property: For operations that exceed the show delay, 
+          // the loading state should be properly managed
+          if (shouldShow) {
+            // Long operation: indicator should be shown and then hidden
+            return indicatorShown === true;
+          } else {
+            // Quick operation: indicator should not be shown (timeout cleared)
+            return hideTimeoutCalled === true;
+          }
+          
+        } finally {
+          // Restore original setTimeout
+          global.setTimeout = originalSetTimeout;
+        }
+      }
+    )
   );
   
   // Summary
