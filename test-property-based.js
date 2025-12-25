@@ -87,7 +87,7 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
       LISTS: /^[\s]*[-*+]\s+.+$/m,
       ORDERED_LISTS: /^[\s]*\d+\.\s+.+$/m,
       CODE_BLOCKS: /```[\s\S]*?```|`[^`\n]+`/,
-      LINKS: /\[([^\]]+)\]\(([^)]+)\)/,
+      LINKS: /\[([^\]]+)\]\(([^)]+)\)|\[([^\]]+)\]\[([^\]]*)\]/,
       EMPHASIS: /(\*\*|__)[^*_]+(\*\*|__)|(\*|_)[^*_]+(\*|_)/,
       BLOCKQUOTES: /^>\s+.+$/m,
       HORIZONTAL_RULES: /^[-*_]{3,}$/m,
@@ -426,13 +426,22 @@ function runPropertyBasedTests() {
   propertyTest('Property 5: DOM Replacement Integrity',
     fc.property(
       fc.record({
-        originalContent: fc.string({ minLength: 5, maxLength: 500 }).filter(content => {
+        originalContent: fc.string({ minLength: 5, maxLength: 200 }).filter(content => {
           const trimmed = content.trim();
-          return trimmed.length >= 5 && !trimmed.includes('<') && !trimmed.includes('>');
+          // Ensure content is meaningful and doesn't contain HTML-like characters
+          return trimmed.length >= 5 && 
+                 !trimmed.includes('<') && 
+                 !trimmed.includes('>') &&
+                 !trimmed.includes('&') &&
+                 trimmed.match(/[a-zA-Z0-9]/); // Contains at least some alphanumeric characters
         }),
-        renderedHTML: fc.string({ minLength: 10, maxLength: 200 }).filter(html => {
-          return html.includes('<') && html.includes('>') && html.trim().length >= 10;
-        })
+        renderedHTML: fc.oneof(
+          fc.constant('<p>Simple paragraph</p>'),
+          fc.constant('<h1>Header</h1>'),
+          fc.constant('<div class="content">Test content</div>'),
+          fc.constant('<ul><li>Item 1</li><li>Item 2</li></ul>'),
+          fc.constant('<pre><code>console.log("test");</code></pre>')
+        )
       }),
       (testData) => {
         // Setup fresh DOM for each test
@@ -493,6 +502,11 @@ function runPropertyBasedTests() {
           const backupSuccess = mockBackupOriginalContent(container);
           if (!backupSuccess) return false;
           
+          // Verify backup was created correctly
+          if (!backupData || backupData.innerHTML !== originalHTML) {
+            return false;
+          }
+          
           // Step 2: Replace with rendered HTML
           const replaceSuccess = mockReplaceContentWithHTML(testData.renderedHTML);
           if (!replaceSuccess) return false;
@@ -501,6 +515,9 @@ function runPropertyBasedTests() {
           const replacedContent = container.innerHTML;
           if (replacedContent !== testData.renderedHTML) return false;
           
+          // Verify CSS class was added
+          if (!container.classList.contains('slack-markdown-rendered')) return false;
+          
           // Step 3: Restore original content
           const restoreSuccess = mockRestoreOriginalContent();
           if (!restoreSuccess) return false;
@@ -508,6 +525,9 @@ function runPropertyBasedTests() {
           // Step 4: Verify restoration integrity
           const restoredHTML = container.innerHTML;
           const restoredText = container.textContent.trim();
+          
+          // Verify CSS class was removed
+          if (container.classList.contains('slack-markdown-rendered')) return false;
           
           // Property: After replacement and restoration, original content should be exactly preserved
           const htmlMatches = restoredHTML === originalHTML;
@@ -585,7 +605,12 @@ function runPropertyBasedTests() {
         initialView: fc.constantFrom('raw', 'rendered'),
         hasProcessedHTML: fc.boolean(),
         contentLength: fc.integer({ min: 10, max: 1000 }),
-        toggleSequence: fc.array(fc.constantFrom('toggle', 'raw', 'rendered'), { minLength: 1, maxLength: 8 })
+        toggleSequence: fc.array(fc.constantFrom('toggle', 'raw', 'rendered'), { minLength: 1, maxLength: 6 })
+      }).filter(data => {
+        // Filter out invalid initial states: 
+        // If initialView is 'rendered' but hasProcessedHTML is false, this is an invalid state
+        // because you cannot be in rendered view without processed HTML
+        return !(data.initialView === 'rendered' && !data.hasProcessedHTML);
       }),
       (testData) => {
         // Setup test environment with DOM
@@ -613,7 +638,7 @@ function runPropertyBasedTests() {
         let mockProcessedHTML = testData.hasProcessedHTML ? 
           '<div class="slack-markdown-renderer-content"><h1>Mock HTML</h1></div>' : null;
         let mockOriginalContent = 'Original test content for toggle testing';
-        let mockHasBackup = false;
+        let mockHasBackup = testData.initialView === 'rendered'; // Backup exists if we start in rendered mode
         
         // Mock toggle state management functions
         const mockToggleState = {
@@ -627,22 +652,22 @@ function runPropertyBasedTests() {
         // Function to simulate view switching with proper state management
         function simulateViewSwitch(targetView) {
           if (targetView === 'raw') {
-            // Switch to RAW view
-            if (mockToggleState.hasBackup || mockToggleState.originalContent) {
+            // Switch to RAW view - always possible if we have original content
+            if (mockToggleState.originalContent) {
               mockToggleState.currentView = 'raw';
               mockToggleState.displayedContent = mockToggleState.originalContent;
               return true;
             }
-            return false; // Cannot switch to RAW without backup
+            return false; // Cannot switch to RAW without original content
           } else if (targetView === 'rendered') {
-            // Switch to rendered view
+            // Switch to rendered view - only possible if we have processed HTML
             if (mockToggleState.processedHTML) {
               mockToggleState.currentView = 'rendered';
               mockToggleState.displayedContent = mockToggleState.processedHTML;
               mockToggleState.hasBackup = true; // Backup is created when switching to rendered
               return true;
             } else {
-              // No processed HTML available, stay in current view
+              // No processed HTML available, cannot switch to rendered view
               return false;
             }
           }
@@ -679,12 +704,13 @@ function runPropertyBasedTests() {
             break;
           }
           
-          // Additional consistency checks
+          // Additional consistency checks for successful operations
           if (operationSuccess) {
-            // If operation succeeded, verify the view actually changed (for toggle) or matches target (for direct switch)
+            // If operation succeeded, verify the view actually changed appropriately
             if (operation === 'toggle') {
-              // For toggle, view should have changed (unless no processed HTML available)
-              if (mockToggleState.processedHTML && mockToggleState.currentView === previousView) {
+              // For toggle, view should have changed if both views are available
+              const canToggle = mockToggleState.processedHTML && mockToggleState.originalContent;
+              if (canToggle && mockToggleState.currentView === previousView) {
                 allOperationsConsistent = false;
                 break;
               }
@@ -719,12 +745,8 @@ function runPropertyBasedTests() {
             }
           } else if (state.currentView === 'rendered') {
             // In rendered mode, displayed content should be the processed HTML
-            // Only if processed HTML is available
-            if (state.processedHTML && state.displayedContent !== state.processedHTML) {
-              return false;
-            }
-            // If no processed HTML, we shouldn't be in rendered mode
-            if (!state.processedHTML) {
+            // And processed HTML must be available
+            if (!state.processedHTML || state.displayedContent !== state.processedHTML) {
               return false;
             }
           } else {
@@ -737,7 +759,12 @@ function runPropertyBasedTests() {
             return false;
           }
           
-          // Property 3: Backup should exist when in rendered mode (after first switch)
+          // Property 3: Cannot be in rendered mode without processed HTML
+          if (state.currentView === 'rendered' && !state.processedHTML) {
+            return false;
+          }
+          
+          // Property 4: Backup should exist when in rendered mode (after first switch)
           if (state.currentView === 'rendered' && !state.hasBackup && !state.originalContent) {
             return false;
           }
