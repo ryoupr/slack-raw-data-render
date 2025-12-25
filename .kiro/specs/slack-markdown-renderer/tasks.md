@@ -137,7 +137,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - Add loading indicators for long operations
     - _Requirements: 7.3, 7.5_
 
-  - [ ] 8.2 Write property test for non-blocking processing
+  - [x] 8.2 Write property test for non-blocking processing
     - **Property 11: Non-Blocking Processing**
     - **Validates: Requirements 7.3**
 
@@ -160,6 +160,66 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 - [x] 10. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
+- [ ] 11. Complete remaining property-based tests
+  - [ ] 11.1 Fix and complete property test for URL pattern detection
+    - **Property 1: URL Pattern Detection**
+    - **Validates: Requirements 1.1, 1.2**
+    - Fix test implementation to properly validate URL pattern matching
+
+  - [ ] 11.2 Fix and complete property test for content analysis
+    - **Property 2: Content Analysis Consistency**
+    - **Validates: Requirements 1.3**
+    - Ensure consistent results across multiple analysis calls
+
+  - [ ] 11.3 Fix and complete property test for Markdown detection
+    - **Property 3: Markdown Detection Accuracy**
+    - **Validates: Requirements 1.4, 4.3**
+    - Test detection accuracy across various Markdown patterns
+
+  - [ ] 11.4 Fix and complete property test for DOM replacement
+    - **Property 5: DOM Replacement Integrity**
+    - **Validates: Requirements 2.3, 3.3, 3.4**
+    - Test content backup and restoration functionality
+
+  - [ ] 11.5 Fix and complete property test for toggle functionality
+    - **Property 8: Toggle State Consistency**
+    - **Validates: Requirements 3.2, 3.3, 3.4**
+    - Test view switching state management
+
+  - [ ] 11.6 Fix and complete property test for session persistence
+    - **Property 9: Session Preference Persistence**
+    - **Validates: Requirements 3.5**
+    - Test session storage and preference loading
+
+  - [ ] 11.7 Fix and complete property test for error isolation
+    - **Property 10: Error Isolation**
+    - **Validates: Requirements 6.4, 6.5**
+    - Test error handling without breaking page functionality
+
+  - [ ] 11.8 Fix and complete property test for non-Markdown preservation
+    - **Property 7: Non-Markdown Content Preservation**
+    - **Validates: Requirements 4.4**
+    - Test preservation of non-Markdown content types
+
+- [ ] 12. Fix test implementation issues
+  - [ ] 12.1 Fix property-based test setup and execution
+    - Resolve function availability issues in test environment
+    - Fix test environment DOM setup
+    - Ensure all required functions are properly exposed for testing
+    - _Requirements: All requirements_
+
+  - [ ] 12.2 Add missing unit tests for styling
+    - Test CSS class application functionality
+    - Test background color setting and theme switching
+    - Test typography enhancement application
+    - _Requirements: 5.1, 5.2, 5.3_
+
+  - [ ] 12.3 Improve test coverage and reliability
+    - Ensure all core functions have adequate test coverage
+    - Fix any failing tests and improve test stability
+    - Add edge case testing for error conditions
+    - _Requirements: All requirements_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
@@ -168,3 +228,4 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
 - The extension uses Manifest V3 and Content Scripts for modern Chrome compatibility
+- Most core functionality is implemented, remaining tasks focus on completing test coverage
