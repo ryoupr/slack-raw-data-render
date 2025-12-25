@@ -465,6 +465,7 @@
     const patterns = {
       HEADERS: /^#{1,6}\s+.+$/m,
       LISTS: /^[\s]*[-*+]\s+.+$/m,
+      ORDERED_LISTS: /^[\s]*\d+\.\s+.+$/m,
       CODE_BLOCKS: /```[\s\S]*?```|`[^`\n]+`/,
       LINKS: /\[([^\]]+)\]\(([^)]+)\)/,
       EMPHASIS: /(\*\*|__)[^*_]+(\*\*|__)|(\*|_)[^*_]+(\*|_)/,
@@ -931,6 +932,16 @@
    * @returns {Promise<Object>} Result object with success status and content/error
    */
   async function safeParseMarkdownAsync(content) {
+    // Input validation for error isolation
+    if (!content || typeof content !== 'string') {
+      return {
+        success: false,
+        html: null,
+        error: 'Invalid content',
+        fallbackHTML: null
+      };
+    }
+    
     try {
       // Yield control before parsing
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -959,6 +970,16 @@
    * @returns {Object} Result object with success status and content/error
    */
   function safeParseMarkdown(content) {
+    // Input validation for error isolation
+    if (!content || typeof content !== 'string') {
+      return {
+        success: false,
+        html: null,
+        error: 'Invalid content',
+        fallbackHTML: null
+      };
+    }
+    
     try {
       const htmlContent = parseMarkdown(content);
       return {
@@ -1081,6 +1102,17 @@
    * @returns {Object} Processing result with HTML and metadata
    */
   function processMarkdownContentSync(markdownContent) {
+    // Input validation for error isolation
+    if (!markdownContent || typeof markdownContent !== 'string') {
+      return {
+        success: false,
+        html: null,
+        styledHTML: null,
+        error: 'Invalid content',
+        fallbackUsed: false
+      };
+    }
+    
     const result = safeParseMarkdown(markdownContent);
     
     if (!result.success) {
@@ -1153,6 +1185,17 @@
    * @returns {Promise<Object>} Processing result with HTML and metadata
    */
   async function processMarkdownContentAsync(markdownContent, progressCallback = null) {
+    // Input validation for error isolation
+    if (!markdownContent || typeof markdownContent !== 'string') {
+      return {
+        success: false,
+        html: null,
+        styledHTML: null,
+        error: 'Invalid content',
+        fallbackUsed: false
+      };
+    }
+    
     // Yield control to allow UI updates
     await new Promise(resolve => setTimeout(resolve, 0));
     
