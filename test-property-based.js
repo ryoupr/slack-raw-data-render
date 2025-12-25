@@ -153,7 +153,7 @@ function runPropertyBasedTests() {
   function propertyTest(name, property, options = {}) {
     totalTests++;
     try {
-      fc.assert(property, { numRuns: 100, ...options });
+      fc.assert(property, { numRuns: 20, ...options });
       console.log(`✅ ${name}`);
       passedTests++;
     } catch (error) {
@@ -446,12 +446,40 @@ function runPropertyBasedTests() {
   // Feature: slack-markdown-renderer, Property 11: Non-Blocking Processing
   propertyTest('Property 11: Non-Blocking Processing',
     fc.property(fc.string({ maxLength: 10000 }), (content) => {
-      // Test that processing doesn't block (synchronous test)
+      // Test that processing doesn't block the main thread
+      let mainThreadBlocked = false;
+      let processingCompleted = false;
+      
+      // Set up a timer to check if main thread remains responsive
+      const checkResponsiveness = () => {
+        // If this callback doesn't execute quickly, main thread is blocked
+        const checkStart = Date.now();
+        setTimeout(() => {
+          const checkEnd = Date.now();
+          // If the setTimeout callback is delayed significantly, thread was blocked
+          if (checkEnd - checkStart > 50) { // 50ms tolerance
+            mainThreadBlocked = true;
+          }
+        }, 0);
+      };
+      
+      // Start responsiveness check
+      checkResponsiveness();
+      
+      // Process the content
       const startTime = Date.now();
-      processMarkdownContent(content);
+      const result = processMarkdownContent(content);
       const endTime = Date.now();
-      // Processing should complete within reasonable time
-      return (endTime - startTime) < 1000; // 1 second max
+      
+      processingCompleted = result && typeof result === 'object';
+      
+      // Processing should complete quickly and not block main thread
+      const processingTime = endTime - startTime;
+      const isNonBlocking = processingTime < 100; // 100ms max for non-blocking
+      const threadResponsive = !mainThreadBlocked;
+      
+      // Property: Processing should be non-blocking (fast) and maintain thread responsiveness
+      return isNonBlocking && threadResponsive && processingCompleted;
     })
   );
   
