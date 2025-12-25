@@ -94,14 +94,14 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
     - **Property 9: Session Preference Persistence**
     - **Validates: Requirements 3.5**
 
-- [ ] 6. Implement styling and visual enhancements
-  - [ ] 6.1 Create CSS styles for rendered content
+- [x] 6. Implement styling and visual enhancements
+  - [x] 6.1 Create CSS styles for rendered content
     - Design typography and spacing rules
     - Implement color scheme and contrast settings
     - Add background color configuration (white/configurable)
     - _Requirements: 5.1, 5.2, 5.3_
 
-  - [ ] 6.2 Add code syntax highlighting support
+  - [x] 6.2 Add code syntax highlighting support
     - Integrate syntax highlighting for code blocks
     - Configure highlighting themes
     - _Requirements: 5.4_

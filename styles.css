@@ -259,7 +259,611 @@
   }
 }
 
-/* Placeholder for additional styles from task 6 */
-.slack-markdown-renderer {
-  /* Additional styles will be added in task 6 */
+/* Enhanced Typography and Spacing Rules (Requirement 5.1) */
+.slack-markdown-renderer-content {
+  /* Enhanced typography settings */
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* Enhanced spacing and layout */
+  margin: 0 auto;
+  padding: 24px 32px;
+  max-width: 900px;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Color Scheme and Contrast Settings (Requirement 5.2) */
+.slack-markdown-renderer-content {
+  /* High contrast color scheme for readability */
+  color: #1a1a1a;
+  background-color: #ffffff;
+  
+  /* Enhanced contrast for different elements */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #6a737d;
+  --border-light: #e1e4e8;
+  --border-medium: #d0d7de;
+  --background-code: #f6f8fa;
+  --background-highlight: #fff8c5;
+  --link-color: #0969da;
+  --link-hover: #0550ae;
+}
+
+/* Background Color Configuration (Requirement 5.3) */
+.slack-markdown-renderer-content.theme-white {
+  background-color: #ffffff;
+  color: #1a1a1a;
+}
+
+.slack-markdown-renderer-content.theme-light-gray {
+  background-color: #f8f9fa;
+  color: #1a1a1a;
+}
+
+.slack-markdown-renderer-content.theme-warm-white {
+  background-color: #fefefe;
+  color: #2d2d2d;
+}
+
+.slack-markdown-renderer-content.theme-paper {
+  background-color: #fdfdfd;
+  color: #333333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Enhanced Typography Hierarchy */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: var(--text-primary);
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 32px;
+  margin-bottom: 16px;
+  scroll-margin-top: 24px;
+}
+
+.markdown-body h1 {
+  font-size: 2.25em;
+  font-weight: 700;
+  border-bottom: 2px solid var(--border-light);
+  padding-bottom: 0.5em;
+  margin-bottom: 24px;
+}
+
+.markdown-body h2 {
+  font-size: 1.75em;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.3em;
+  margin-bottom: 20px;
+}
+
+.markdown-body h3 {
+  font-size: 1.375em;
+  font-weight: 600;
+}
+
+.markdown-body h4 {
+  font-size: 1.125em;
+  font-weight: 600;
+}
+
+.markdown-body h5 {
+  font-size: 1em;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.markdown-body h6 {
+  font-size: 0.875em;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Enhanced Paragraph Styling */
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: var(--text-primary);
+  text-align: justify;
+  hyphens: auto;
+}
+
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced List Styling */
+.markdown-body ul,
+.markdown-body ol {
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding-left: 2em;
+  color: var(--text-primary);
+}
+
+.markdown-body li {
+  margin-bottom: 0.5em;
+  line-height: 1.6;
+}
+
+.markdown-body li > p {
+  margin-bottom: 0.5em;
+}
+
+.markdown-body li:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested list styling */
+.markdown-body ul ul,
+.markdown-body ol ol,
+.markdown-body ul ol,
+.markdown-body ol ul {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+/* Enhanced Code Block Styling */
+.markdown-body pre {
+  background-color: var(--background-code);
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto;
+  padding: 20px;
+  margin-bottom: 20px;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-body code {
+  background-color: rgba(175, 184, 193, 0.15);
+  border: 1px solid rgba(175, 184, 193, 0.2);
+  border-radius: 4px;
+  font-size: 0.9em;
+  margin: 0;
+  padding: 0.2em 0.4em;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  color: #d73a49;
+  font-weight: 500;
+}
+
+.markdown-body pre code {
+  background-color: transparent;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font-weight: normal;
+  display: inline;
+  line-height: inherit;
+  margin: 0;
+  max-width: auto;
+  padding: 0;
+  word-wrap: normal;
+}
+
+/* Enhanced Link Styling */
+.markdown-body a {
+  color: var(--link-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease, text-decoration 0.2s ease;
+}
+
+.markdown-body a:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.markdown-body a:focus {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Enhanced Blockquote Styling */
+.markdown-body blockquote {
+  border-left: 4px solid var(--border-medium);
+  color: var(--text-secondary);
+  margin: 0 0 20px 0;
+  padding: 0 1.5em;
+  font-style: italic;
+  background-color: rgba(0, 0, 0, 0.02);
+  border-radius: 0 4px 4px 0;
+}
+
+.markdown-body blockquote > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body blockquote p {
+  text-align: left;
+}
+
+/* Enhanced Table Styling */
+.markdown-body table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  display: block;
+  margin-bottom: 20px;
+  overflow: auto;
+  width: 100%;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  border: 1px solid var(--border-light);
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.markdown-body table th {
+  background-color: var(--background-code);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.markdown-body table tr:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Enhanced Horizontal Rule Styling */
+.markdown-body hr {
+  background-color: var(--border-medium);
+  border: 0;
+  height: 2px;
+  margin: 32px 0;
+  padding: 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Image Styling */
+.markdown-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 16px 0;
+  display: block;
+}
+
+.markdown-body img[alt*="inline"] {
+  display: inline;
+  margin: 0 4px;
+  vertical-align: middle;
+}
+
+/* Print Styles */
+@media print {
+  .slack-markdown-renderer-content {
+    background-color: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: none !important;
+  }
+  
+  .slack-markdown-toggle-button {
+    display: none !important;
+  }
+  
+  .markdown-body a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+  
+  .markdown-body pre,
+  .markdown-body code {
+    background-color: #f5f5f5 !important;
+    border: 1px solid #ccc !important;
+  }
+}
+
+/* Accessibility Enhancements */
+@media (prefers-reduced-motion: reduce) {
+  .slack-markdown-renderer-content *,
+  .slack-markdown-toggle-button {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .slack-markdown-renderer-content {
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --border-light: #000000;
+    --border-medium: #000000;
+    --background-code: #f0f0f0;
+    --link-color: #0000ee;
+    --link-hover: #0000aa;
+  }
+  
+  .markdown-body code {
+    background-color: #f0f0f0;
+    border: 2px solid #000000;
+    color: #000000;
+  }
+  
+  .markdown-body pre {
+    border: 2px solid #000000;
+  }
+}
+
+/* Focus Management for Better Accessibility */
+.markdown-body *:focus {
+  outline: 2px solid var(--link-color);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Selection Styling */
+.markdown-body ::selection {
+  background-color: var(--background-highlight);
+  color: var(--text-primary);
+}
+
+.markdown-body ::-moz-selection {
+  background-color: var(--background-highlight);
+  color: var(--text-primary);
+}
+
+/* Code Syntax Highlighting Enhancements (Requirement 5.4) */
+.markdown-body pre[class*="language-"] {
+  background-color: #f8f8f8;
+  border: 1px solid var(--border-light);
+  border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow: auto;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.markdown-body code[class*="language-"] {
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+}
+
+/* Language label for code blocks */
+.markdown-body pre[class*="language-"]:before {
+  content: attr(data-language);
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Custom syntax highlighting theme */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #708090;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #999;
+}
+
+.token.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #d73a49;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #032f62;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #a67f59;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+.token.function,
+.token.class-name {
+  color: #6f42c1;
+  font-weight: 600;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e36209;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* Line highlighting */
+.markdown-body pre[class*="language-"].line-numbers {
+  position: relative;
+  padding-left: 3.8em;
+  counter-reset: linenumber;
+}
+
+.markdown-body pre[class*="language-"].line-numbers > code {
+  position: relative;
+  white-space: inherit;
+}
+
+.line-numbers .line-numbers-rows {
+  position: absolute;
+  pointer-events: none;
+  top: 0;
+  font-size: 100%;
+  left: -3.8em;
+  width: 3em;
+  letter-spacing: -1px;
+  border-right: 1px solid #999;
+  user-select: none;
+}
+
+.line-numbers-rows > span {
+  display: block;
+  counter-increment: linenumber;
+}
+
+.line-numbers-rows > span:before {
+  content: counter(linenumber);
+  color: #999;
+  display: block;
+  padding-right: 0.8em;
+  text-align: right;
+}
+
+/* Dark theme for syntax highlighting */
+.slack-markdown-renderer-content.theme-dark pre[class*="language-"] {
+  background-color: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.slack-markdown-renderer-content.theme-dark .token.comment,
+.slack-markdown-renderer-content.theme-dark .token.prolog,
+.slack-markdown-renderer-content.theme-dark .token.doctype,
+.slack-markdown-renderer-content.theme-dark .token.cdata {
+  color: #a0aec0;
+}
+
+.slack-markdown-renderer-content.theme-dark .token.property,
+.slack-markdown-renderer-content.theme-dark .token.tag,
+.slack-markdown-renderer-content.theme-dark .token.boolean,
+.slack-markdown-renderer-content.theme-dark .token.number,
+.slack-markdown-renderer-content.theme-dark .token.constant,
+.slack-markdown-renderer-content.theme-dark .token.symbol,
+.slack-markdown-renderer-content.theme-dark .token.deleted {
+  color: #f56565;
+}
+
+.slack-markdown-renderer-content.theme-dark .token.selector,
+.slack-markdown-renderer-content.theme-dark .token.attr-name,
+.slack-markdown-renderer-content.theme-dark .token.string,
+.slack-markdown-renderer-content.theme-dark .token.char,
+.slack-markdown-renderer-content.theme-dark .token.builtin,
+.slack-markdown-renderer-content.theme-dark .token.inserted {
+  color: #68d391;
+}
+
+.slack-markdown-renderer-content.theme-dark .token.atrule,
+.slack-markdown-renderer-content.theme-dark .token.attr-value,
+.slack-markdown-renderer-content.theme-dark .token.keyword {
+  color: #9f7aea;
+}
+
+.slack-markdown-renderer-content.theme-dark .token.function,
+.slack-markdown-renderer-content.theme-dark .token.class-name {
+  color: #63b3ed;
+}
+
+/* Copy button for code blocks */
+.markdown-body pre[class*="language-"] .copy-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.markdown-body pre[class*="language-"] .copy-button:hover {
+  background-color: #fff;
+  color: #333;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.markdown-body pre[class*="language-"] .copy-button:active {
+  transform: translateY(1px);
+}
+
+.markdown-body pre[class*="language-"] .copy-button.copied {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
 }

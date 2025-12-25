@@ -13,9 +13,12 @@
       ],
       "js": [
         "lib/marked.min.js",
+        "lib/prism.min.js",
+        "lib/prism-components.min.js",
         "content-script.js"
       ],
       "css": [
+        "lib/prism.min.css",
         "styles.css"
       ],
       "run_at": "document_idle"

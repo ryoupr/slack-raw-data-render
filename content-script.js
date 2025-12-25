@@ -231,7 +231,19 @@
       sanitize: false,    // We'll handle sanitization separately if needed
       smartLists: true,   // Use smarter list behavior
       smartypants: false, // Don't use smart quotes
-      xhtml: false        // Don't use XHTML-compliant tags
+      xhtml: false,       // Don't use XHTML-compliant tags
+      highlight: function(code, lang) {
+        // Use Prism.js for syntax highlighting if available
+        if (typeof Prism !== 'undefined' && lang && Prism.languages[lang]) {
+          try {
+            return Prism.highlight(code, Prism.languages[lang], lang);
+          } catch (error) {
+            console.warn('Slack Markdown Renderer: Error highlighting code with Prism:', error);
+            return code; // Return unhighlighted code
+          }
+        }
+        return code; // Return unhighlighted code
+      }
     });
   }
 
@@ -687,6 +699,15 @@
     try {
       const success = replaceContentWithHTML(processedMarkdownHTML);
       if (success) {
+        // Re-apply styling and syntax highlighting
+        applyBaseStyles();
+        applyTypographyEnhancements();
+        
+        const container = currentContentContainer || findContentContainer();
+        if (container) {
+          applySyntaxHighlighting(container);
+        }
+        
         updateToggleButton('rendered');
         saveSessionPreference('rendered');
         console.log('Slack Markdown Renderer: Switched to rendered view');
@@ -708,6 +729,466 @@
       return switchToRenderedView();
     } else {
       return switchToRawView();
+    }
+  }
+
+  /**
+   * Syntax Highlighting Functions
+   */
+  
+  /**
+   * Configures Prism.js for syntax highlighting
+   */
+  function configurePrismOptions() {
+    if (typeof Prism === 'undefined') {
+      console.warn('Slack Markdown Renderer: Prism.js library is not loaded');
+      return false;
+    }
+    
+    try {
+      // Configure Prism options
+      Prism.manual = true; // Disable automatic highlighting
+      
+      // Add language aliases for common cases
+      if (Prism.languages) {
+        // Add common language aliases
+        if (Prism.languages.javascript) {
+          Prism.languages.js = Prism.languages.javascript;
+          Prism.languages.jsx = Prism.languages.javascript;
+        }
+        if (Prism.languages.typescript) {
+          Prism.languages.ts = Prism.languages.typescript;
+          Prism.languages.tsx = Prism.languages.typescript;
+        }
+        if (Prism.languages.python) {
+          Prism.languages.py = Prism.languages.python;
+        }
+        if (Prism.languages.bash) {
+          Prism.languages.sh = Prism.languages.bash;
+          Prism.languages.shell = Prism.languages.bash;
+        }
+      }
+      
+      console.log('Slack Markdown Renderer: Prism.js configured successfully');
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error configuring Prism.js:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Detects programming language from code block
+   * @param {string} codeBlock - The code block text
+   * @param {string} specifiedLang - Language specified in markdown (if any)
+   * @returns {string} Detected or specified language
+   */
+  function detectCodeLanguage(codeBlock, specifiedLang = null) {
+    if (specifiedLang && specifiedLang.trim()) {
+      return specifiedLang.trim().toLowerCase();
+    }
+    
+    // Simple heuristics for language detection
+    const patterns = {
+      javascript: [/function\s+\w+\s*\(/, /const\s+\w+\s*=/, /=>\s*{/, /console\.log/, /require\s*\(/],
+      python: [/def\s+\w+\s*\(/, /import\s+\w+/, /from\s+\w+\s+import/, /print\s*\(/, /if\s+__name__\s*==\s*['"]/],
+      java: [/public\s+class\s+\w+/, /public\s+static\s+void\s+main/, /System\.out\.println/, /import\s+java\./],
+      css: [/\{\s*[\w-]+\s*:\s*[^}]+\}/, /@media\s*\(/, /\.[\w-]+\s*\{/, /#[\w-]+\s*\{/],
+      html: [/<\/?[a-z][\s\S]*>/i, /<!DOCTYPE\s+html>/i, /<html[\s\S]*>/i],
+      json: [/^\s*\{[\s\S]*\}\s*$/, /^\s*\[[\s\S]*\]\s*$/],
+      bash: [/#!/, /\$\s+\w+/, /echo\s+/, /grep\s+/, /awk\s+/],
+      sql: [/SELECT\s+.*FROM/i, /INSERT\s+INTO/i, /UPDATE\s+.*SET/i, /DELETE\s+FROM/i]
+    };
+    
+    for (const [lang, langPatterns] of Object.entries(patterns)) {
+      if (langPatterns.some(pattern => pattern.test(codeBlock))) {
+        return lang;
+      }
+    }
+    
+    return 'text'; // fallback
+  }
+
+  /**
+   * Applies syntax highlighting to code blocks
+   * @param {HTMLElement} container - Container with rendered HTML
+   * @returns {boolean} True if highlighting was successfully applied
+   */
+  function applySyntaxHighlighting(container) {
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container provided for syntax highlighting');
+      return false;
+    }
+    
+    if (typeof Prism === 'undefined') {
+      console.warn('Slack Markdown Renderer: Prism.js not available for syntax highlighting');
+      return false;
+    }
+    
+    try {
+      // Configure Prism if not already done
+      configurePrismOptions();
+      
+      // Find all code blocks
+      const codeBlocks = container.querySelectorAll('pre code');
+      let highlightedCount = 0;
+      
+      codeBlocks.forEach((codeElement, index) => {
+        try {
+          const preElement = codeElement.parentElement;
+          const codeText = codeElement.textContent || '';
+          
+          if (codeText.trim().length === 0) {
+            return; // Skip empty code blocks
+          }
+          
+          // Detect language
+          let language = 'text';
+          
+          // Check if language is specified in class name
+          const classMatch = codeElement.className.match(/language-(\w+)/);
+          if (classMatch) {
+            language = classMatch[1].toLowerCase();
+          } else {
+            // Try to detect language from content
+            language = detectCodeLanguage(codeText);
+          }
+          
+          // Ensure we have the language in Prism
+          if (!Prism.languages[language]) {
+            language = 'text';
+          }
+          
+          // Apply language class
+          codeElement.className = `language-${language}`;
+          preElement.className = `language-${language}`;
+          
+          // Add language label
+          preElement.setAttribute('data-language', language);
+          
+          // Apply syntax highlighting
+          if (language !== 'text' && Prism.languages[language]) {
+            const highlightedCode = Prism.highlight(codeText, Prism.languages[language], language);
+            codeElement.innerHTML = highlightedCode;
+            highlightedCount++;
+          }
+          
+          // Add copy button
+          addCopyButtonToCodeBlock(preElement, codeText);
+          
+        } catch (error) {
+          console.warn(`Slack Markdown Renderer: Error highlighting code block ${index}:`, error);
+        }
+      });
+      
+      console.log(`Slack Markdown Renderer: Applied syntax highlighting to ${highlightedCount} code blocks`);
+      return highlightedCount > 0;
+      
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error applying syntax highlighting:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Adds a copy button to a code block
+   * @param {HTMLElement} preElement - The pre element containing the code
+   * @param {string} codeText - The code text to copy
+   */
+  function addCopyButtonToCodeBlock(preElement, codeText) {
+    try {
+      // Remove existing copy button if present
+      const existingButton = preElement.querySelector('.copy-button');
+      if (existingButton) {
+        existingButton.remove();
+      }
+      
+      // Create copy button
+      const copyButton = document.createElement('button');
+      copyButton.className = 'copy-button';
+      copyButton.textContent = 'Copy';
+      copyButton.title = 'Copy code to clipboard';
+      copyButton.setAttribute('aria-label', 'Copy code to clipboard');
+      
+      // Add click handler
+      copyButton.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        try {
+          await navigator.clipboard.writeText(codeText);
+          
+          // Show feedback
+          copyButton.textContent = 'Copied!';
+          copyButton.classList.add('copied');
+          
+          // Reset after 2 seconds
+          setTimeout(() => {
+            copyButton.textContent = 'Copy';
+            copyButton.classList.remove('copied');
+          }, 2000);
+          
+        } catch (error) {
+          console.warn('Slack Markdown Renderer: Could not copy to clipboard:', error);
+          
+          // Fallback: select text
+          const range = document.createRange();
+          const codeElement = preElement.querySelector('code');
+          if (codeElement) {
+            range.selectNodeContents(codeElement);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
+          
+          copyButton.textContent = 'Selected';
+          setTimeout(() => {
+            copyButton.textContent = 'Copy';
+          }, 2000);
+        }
+      });
+      
+      // Add button to pre element
+      preElement.style.position = 'relative';
+      preElement.appendChild(copyButton);
+      
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Error adding copy button:', error);
+    }
+  }
+
+  /**
+   * Configures syntax highlighting theme
+   * @param {string} theme - Theme name ('default', 'dark')
+   * @returns {boolean} True if theme was successfully applied
+   */
+  function setSyntaxHighlightingTheme(theme = 'default') {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container found for syntax highlighting theme');
+      return false;
+    }
+    
+    try {
+      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+      if (!renderedContent) {
+        console.warn('Slack Markdown Renderer: No rendered content found for syntax highlighting theme');
+        return false;
+      }
+      
+      // Remove existing theme classes
+      renderedContent.classList.remove('theme-dark');
+      
+      // Apply new theme
+      if (theme === 'dark') {
+        renderedContent.classList.add('theme-dark');
+      }
+      
+      console.log(`Slack Markdown Renderer: Syntax highlighting theme set to ${theme}`);
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error setting syntax highlighting theme:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Style Controller Functions
+   */
+  
+  /**
+   * Available background themes
+   */
+  const BACKGROUND_THEMES = {
+    WHITE: 'theme-white',
+    LIGHT_GRAY: 'theme-light-gray',
+    WARM_WHITE: 'theme-warm-white',
+    PAPER: 'theme-paper'
+  };
+
+  /**
+   * Applies base styles to the rendered content
+   */
+  function applyBaseStyles() {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container found for applying base styles');
+      return false;
+    }
+    
+    try {
+      // Ensure the container has the base styling class
+      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+      if (renderedContent) {
+        renderedContent.classList.add('slack-markdown-renderer-content');
+        console.log('Slack Markdown Renderer: Base styles applied');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error applying base styles:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Sets the background color theme for rendered content
+   * @param {string} theme - The theme name (white, light-gray, warm-white, paper)
+   * @returns {boolean} True if theme was successfully applied
+   */
+  function setBackgroundTheme(theme = 'white') {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container found for setting background theme');
+      return false;
+    }
+    
+    try {
+      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+      if (!renderedContent) {
+        console.warn('Slack Markdown Renderer: No rendered content found for theme application');
+        return false;
+      }
+      
+      // Remove existing theme classes
+      Object.values(BACKGROUND_THEMES).forEach(themeClass => {
+        renderedContent.classList.remove(themeClass);
+      });
+      
+      // Apply new theme
+      const themeClass = BACKGROUND_THEMES[theme.toUpperCase().replace('-', '_')] || BACKGROUND_THEMES.WHITE;
+      renderedContent.classList.add(themeClass);
+      
+      // Save theme preference
+      saveThemePreference(theme);
+      
+      console.log(`Slack Markdown Renderer: Background theme set to ${theme}`);
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error setting background theme:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Gets the current background theme
+   * @returns {string} The current theme name
+   */
+  function getCurrentBackgroundTheme() {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      return 'white'; // default
+    }
+    
+    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+    if (!renderedContent) {
+      return 'white'; // default
+    }
+    
+    // Check which theme class is applied
+    for (const [themeName, themeClass] of Object.entries(BACKGROUND_THEMES)) {
+      if (renderedContent.classList.contains(themeClass)) {
+        return themeName.toLowerCase().replace('_', '-');
+      }
+    }
+    
+    return 'white'; // default
+  }
+
+  /**
+   * Saves theme preference to session storage
+   * @param {string} theme - The theme to save
+   */
+  function saveThemePreference(theme) {
+    try {
+      sessionStorage.setItem('slack-markdown-renderer-theme-preference', theme);
+      console.log(`Slack Markdown Renderer: Theme preference saved: ${theme}`);
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not save theme preference:', error);
+    }
+  }
+
+  /**
+   * Loads theme preference from session storage
+   * @returns {string} The saved theme preference or default
+   */
+  function loadThemePreference() {
+    try {
+      const savedTheme = sessionStorage.getItem('slack-markdown-renderer-theme-preference');
+      if (savedTheme && Object.keys(BACKGROUND_THEMES).includes(savedTheme.toUpperCase().replace('-', '_'))) {
+        console.log(`Slack Markdown Renderer: Theme preference loaded: ${savedTheme}`);
+        return savedTheme;
+      }
+    } catch (error) {
+      console.warn('Slack Markdown Renderer: Could not load theme preference:', error);
+    }
+    
+    return 'white'; // default
+  }
+
+  /**
+   * Applies typography and spacing enhancements
+   * @returns {boolean} True if enhancements were successfully applied
+   */
+  function applyTypographyEnhancements() {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container found for typography enhancements');
+      return false;
+    }
+    
+    try {
+      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+      if (!renderedContent) {
+        console.warn('Slack Markdown Renderer: No rendered content found for typography enhancements');
+        return false;
+      }
+      
+      // Apply enhanced typography class if not already present
+      if (!renderedContent.classList.contains('enhanced-typography')) {
+        renderedContent.classList.add('enhanced-typography');
+      }
+      
+      console.log('Slack Markdown Renderer: Typography enhancements applied');
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error applying typography enhancements:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Applies color scheme and contrast settings
+   * @param {string} scheme - The color scheme ('default', 'high-contrast')
+   * @returns {boolean} True if color scheme was successfully applied
+   */
+  function applyColorScheme(scheme = 'default') {
+    const container = currentContentContainer || findContentContainer();
+    if (!container) {
+      console.warn('Slack Markdown Renderer: No container found for color scheme');
+      return false;
+    }
+    
+    try {
+      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
+      if (!renderedContent) {
+        console.warn('Slack Markdown Renderer: No rendered content found for color scheme');
+        return false;
+      }
+      
+      // Remove existing color scheme classes
+      renderedContent.classList.remove('high-contrast-scheme');
+      
+      // Apply new color scheme
+      if (scheme === 'high-contrast') {
+        renderedContent.classList.add('high-contrast-scheme');
+      }
+      
+      console.log(`Slack Markdown Renderer: Color scheme set to ${scheme}`);
+      return true;
+    } catch (error) {
+      console.error('Slack Markdown Renderer: Error applying color scheme:', error);
+      return false;
     }
   }
 
@@ -888,6 +1369,24 @@
         if (replacementResult.success) {
           console.log('Slack Markdown Renderer: Content replacement successful');
           console.log('Current state:', replacementResult.state);
+          
+          // Apply enhanced styling
+          applyBaseStyles();
+          applyTypographyEnhancements();
+          
+          // Load and apply saved theme preference
+          const savedTheme = loadThemePreference();
+          setBackgroundTheme(savedTheme);
+          
+          // Apply default color scheme
+          applyColorScheme('default');
+          
+          // Apply syntax highlighting
+          const container = currentContentContainer || findContentContainer();
+          if (container) {
+            applySyntaxHighlighting(container);
+            setSyntaxHighlightingTheme('default');
+          }
           
           // Create and add toggle button
           const button = createToggleButton();
