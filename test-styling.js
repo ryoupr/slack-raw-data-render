@@ -117,27 +117,6 @@ function loadContentScriptFunctions() {
     }
   };
   
-  global.getCurrentBackgroundTheme = function() {
-    const container = global.currentContentContainer || findContentContainer();
-    if (!container) {
-      return 'white'; // default
-    }
-    
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    if (!renderedContent) {
-      return 'white'; // default
-    }
-    
-    // Check which theme class is applied
-    for (const [themeName, themeClass] of Object.entries(global.BACKGROUND_THEMES)) {
-      if (renderedContent.classList.contains(themeClass)) {
-        return themeName.toLowerCase().replace('_', '-');
-      }
-    }
-    
-    return 'white'; // default
-  };
-  
   global.saveThemePreference = function(theme) {
     try {
       if (typeof sessionStorage !== 'undefined') {
@@ -163,63 +142,6 @@ function loadContentScriptFunctions() {
     }
     
     return 'white'; // default
-  };
-  
-  global.applyTypographyEnhancements = function() {
-    const container = global.currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for typography enhancements');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (!renderedContent) {
-        console.warn('Slack Markdown Renderer: No rendered content found for typography enhancements');
-        return false;
-      }
-      
-      // Apply enhanced typography class if not already present
-      if (!renderedContent.classList.contains('enhanced-typography')) {
-        renderedContent.classList.add('enhanced-typography');
-      }
-      
-      console.log('Slack Markdown Renderer: Typography enhancements applied');
-      return true;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying typography enhancements:', error);
-      return false;
-    }
-  };
-  
-  global.applyColorScheme = function(scheme = 'default') {
-    const container = global.currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for color scheme');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (!renderedContent) {
-        console.warn('Slack Markdown Renderer: No rendered content found for color scheme');
-        return false;
-      }
-      
-      // Remove existing color scheme classes
-      renderedContent.classList.remove('high-contrast-scheme');
-      
-      // Apply new color scheme
-      if (scheme === 'high-contrast') {
-        renderedContent.classList.add('high-contrast-scheme');
-      }
-      
-      console.log(`Slack Markdown Renderer: Color scheme set to ${scheme}`);
-      return true;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying color scheme:', error);
-      return false;
-    }
   };
   
   global.findContentContainer = function() {
@@ -249,23 +171,6 @@ function runStylingTests() {
       console.log(`❌ ${name}: ${error.message}`);
     }
   }
-
-  // Test 2: CSS Class Application - Typography Enhancements (Requirement 5.1)
-  test('CSS Class Application - Typography Enhancements', () => {
-    const container = document.getElementById('test-container');
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    
-    // Mock currentContentContainer for the function
-    global.currentContentContainer = container;
-    
-    // Test applying typography enhancements
-    const result = applyTypographyEnhancements();
-    
-    if (!result) throw new Error('applyTypographyEnhancements should return true on success');
-    if (!renderedContent.classList.contains('enhanced-typography')) {
-      throw new Error('Enhanced typography class should be applied');
-    }
-  });
 
   // Test 3: Background Color Setting - White Theme (Requirement 5.3)
   test('Background Color Setting - White Theme', () => {
@@ -350,57 +255,6 @@ function runStylingTests() {
     }
   });
 
-  // Test 7: Color Scheme Application - Default (Requirement 5.2)
-  test('Color Scheme Application - Default', () => {
-    const container = document.getElementById('test-container');
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    
-    // Mock currentContentContainer for the function
-    global.currentContentContainer = container;
-    
-    // Test applying default color scheme
-    const result = applyColorScheme('default');
-    
-    if (!result) throw new Error('applyColorScheme should return true on success');
-    if (renderedContent.classList.contains('high-contrast-scheme')) {
-      throw new Error('High contrast class should not be applied for default scheme');
-    }
-  });
-
-  // Test 8: Color Scheme Application - High Contrast (Requirement 5.2)
-  test('Color Scheme Application - High Contrast', () => {
-    const container = document.getElementById('test-container');
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    
-    // Mock currentContentContainer for the function
-    global.currentContentContainer = container;
-    
-    // Test applying high contrast color scheme
-    const result = applyColorScheme('high-contrast');
-    
-    if (!result) throw new Error('applyColorScheme should return true on success');
-    if (!renderedContent.classList.contains('high-contrast-scheme')) {
-      throw new Error('High contrast class should be applied');
-    }
-  });
-
-  // Test 9: Current Theme Detection (Requirement 5.3)
-  test('Current Theme Detection', () => {
-    const container = document.getElementById('test-container');
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    
-    // Mock currentContentContainer for the function
-    global.currentContentContainer = container;
-    
-    // Set a theme and verify detection
-    setBackgroundTheme('warm-white');
-    const currentTheme = getCurrentBackgroundTheme();
-    
-    if (currentTheme !== 'warm-white') {
-      throw new Error(`Should detect current theme as 'warm-white', got '${currentTheme}'`);
-    }
-  });
-
   // Test 10: Theme Preference Loading (Requirement 5.3)
   test('Theme Preference Loading', () => {
     // Pre-populate sessionStorage with a theme preference
@@ -413,7 +267,7 @@ function runStylingTests() {
     }
   });
 
-  // Test 11: Error Handling - No Container (Requirement 5.1, 5.2, 5.3)
+  // Test 11: Error Handling - No Container (Requirement 5.3)
   test('Error Handling - No Container', () => {
     // Mock currentContentContainer as null
     global.currentContentContainer = null;
@@ -422,16 +276,12 @@ function runStylingTests() {
     global.findContentContainer = () => null;
     
     // Test functions should handle missing container gracefully
-    const typographyResult = applyTypographyEnhancements();
     const themeResult = setBackgroundTheme('white');
-    const colorSchemeResult = applyColorScheme('default');
     
-    if (typographyResult !== false) throw new Error('applyTypographyEnhancements should return false when no container');
     if (themeResult !== false) throw new Error('setBackgroundTheme should return false when no container');
-    if (colorSchemeResult !== false) throw new Error('applyColorScheme should return false when no container');
   });
 
-  // Test 12: Error Handling - No Rendered Content (Requirement 5.1, 5.2, 5.3)
+  // Test 12: Error Handling - No Rendered Content (Requirement 5.3)
   test('Error Handling - No Rendered Content', () => {
     // Create container without rendered content
     const emptyContainer = document.createElement('div');
@@ -442,12 +292,8 @@ function runStylingTests() {
     
     // Test functions should handle missing rendered content gracefully
     const themeResult = setBackgroundTheme('white');
-    const typographyResult = applyTypographyEnhancements();
-    const colorSchemeResult = applyColorScheme('default');
     
     if (themeResult !== false) throw new Error('setBackgroundTheme should return false when no rendered content');
-    if (typographyResult !== false) throw new Error('applyTypographyEnhancements should return false when no rendered content');
-    if (colorSchemeResult !== false) throw new Error('applyColorScheme should return false when no rendered content');
   });
 
   // Summary
