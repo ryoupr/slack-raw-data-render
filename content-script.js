@@ -2183,5 +2183,23 @@
 
   // Initialize the extension when the script loads
   initializeExtension();
+
+  // Listen for line-height adjustment from popup
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'setLineHeight') {
+      const el = document.querySelector('.markdown-body');
+      if (el) el.style.lineHeight = msg.value;
+    }
+  });
+
+  // Apply saved line-height on load
+  if (chrome.storage) {
+    chrome.storage.local.get('lineHeight', (data) => {
+      if (data.lineHeight) {
+        const el = document.querySelector('.markdown-body');
+        if (el) el.style.lineHeight = data.lineHeight;
+      }
+    });
+  }
   
 })();
