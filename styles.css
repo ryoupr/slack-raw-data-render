@@ -230,6 +230,7 @@
   margin-bottom: 0 !important;
   padding-top: 0 !important;
   padding-bottom: 0 !important;
+  line-height: 1 !important;
 }
 
 .markdown-body li br {
