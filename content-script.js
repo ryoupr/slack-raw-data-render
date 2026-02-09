@@ -856,7 +856,11 @@
     
     const cleanHTML = sanitizeHTML(htmlContent);
     // Convert loose lists (li containing p) to tight lists for compact rendering
-    const tightHTML = cleanHTML.replace(/<li>\s*<p>/g, '<li>').replace(/<\/p>\s*<\/li>/g, '</li>');
+    const tightHTML = cleanHTML
+      .replace(/<li>\s*<p>/g, '<li>').replace(/<\/p>\s*<\/li>/g, '</li>')
+      .replace(/<p>\s*<\/p>/g, '')           // Remove empty paragraphs
+      .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '') // Remove paragraphs containing only br
+      .replace(/(<br\s*\/?>){2,}/g, '<br>'); // Collapse consecutive br tags
     return `
       <div class="slack-markdown-renderer-content">
         <div class="markdown-body">
