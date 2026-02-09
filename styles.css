@@ -73,19 +73,20 @@ pre.slack-markdown-rendered {
   z-index: 10001;
   width: 32px;
   height: 32px;
-  border: 1px solid #d0d7de;
+  border: none;
   border-radius: 6px;
-  background: #fff;
+  background: #4a154b;
+  color: #fff;
   font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 .slack-markdown-toc-toggle:hover {
-  background: #f0f0f0;
+  background: #611f69;
 }
 
 /* Shift main content when TOC is present */
