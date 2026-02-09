@@ -5,8 +5,6 @@
  */
 
 const { JSDOM } = require('jsdom');
-const fs = require('fs');
-const path = require('path');
 
 // Setup DOM environment for testing
 function setupTestEnvironment() {

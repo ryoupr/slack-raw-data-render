@@ -795,23 +795,6 @@
   }
 }
 
-/* Critical error styles */
-.slack-markdown-renderer-content.critical-error {
-  border: 2px solid #dc3545;
-  background-color: #f8d7da;
-}
-
-.critical-error .error-notice {
-  background-color: #f8d7da;
-  border-color: #f5c6cb;
-  color: #721c24;
-}
-
-.critical-error .error-notice summary {
-  color: #721c24;
-  border-bottom-color: #dc3545;
-}
-
 /* High contrast error styles for accessibility */
 @media (prefers-contrast: high) {
   .error-notice {
@@ -956,30 +939,6 @@
   }
 }
 
-/* Loading indicator dark theme */
-.slack-markdown-loading-indicator.dark-theme {
-  background-color: rgba(45, 55, 72, 0.95);
-  border-color: #4a5568;
-  color: #e2e8f0;
-}
-
-.dark-theme .loading-spinner {
-  border-color: #4a5568;
-  border-top-color: #9f7aea;
-}
-
-.dark-theme .loading-message {
-  color: #e2e8f0;
-}
-
-.dark-theme .progress-bar {
-  background-color: #4a5568;
-}
-
-.dark-theme .progress-fill {
-  background: linear-gradient(90deg, #9f7aea, #b794f6);
-}
-
 /* Loading indicator accessibility */
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
@@ -1035,40 +994,6 @@
   outline-offset: 2px;
 }
 
-/* Loading states for different operations */
-.slack-markdown-loading-indicator.parsing .loading-spinner {
-  border-top-color: #007a5a;
-}
-
-.slack-markdown-loading-indicator.parsing .progress-fill {
-  background: linear-gradient(90deg, #007a5a, #148567);
-}
-
-.slack-markdown-loading-indicator.styling .loading-spinner {
-  border-top-color: #e36209;
-}
-
-.slack-markdown-loading-indicator.styling .progress-fill {
-  background: linear-gradient(90deg, #e36209, #f56500);
-}
-
-.slack-markdown-loading-indicator.highlighting .loading-spinner {
-  border-top-color: #6f42c1;
-}
-
-.slack-markdown-loading-indicator.highlighting .progress-fill {
-  background: linear-gradient(90deg, #6f42c1, #8a63d2);
-}
-
-.slack-markdown-loading-indicator.complete .loading-spinner {
-  border-top-color: #28a745;
-  animation: none;
-}
-
-.slack-markdown-loading-indicator.complete .progress-fill {
-  background: linear-gradient(90deg, #28a745, #34ce57);
-}
-
 /* Loading indicator animation entrance */
 .slack-markdown-loading-indicator {
   animation: fadeInScale 0.3s ease-out;
@@ -1085,58 +1010,3 @@
   }
 }
 
-/* Loading indicator exit animation */
-.slack-markdown-loading-indicator.hiding {
-  animation: fadeOutScale 0.2s ease-in forwards;
-}
-
-@keyframes fadeOutScale {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-}
-
-/* Content type specific styling hints */
-.slack-markdown-renderer-content[data-content-type="json"] .original-content,
-.slack-markdown-renderer-content[data-content-type="xml"] .original-content,
-.slack-markdown-renderer-content[data-content-type="code"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-  background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}
-
-.slack-markdown-renderer-content[data-content-type="log"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-  border: 1px solid #333 !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}
-
-.slack-markdown-renderer-content[data-content-type="csv"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-  background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}

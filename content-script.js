@@ -80,25 +80,6 @@
   }
 
   /**
-   * Validates URL format and accessibility
-   * @param {string} url - The URL to validate
-   * @returns {boolean} True if URL is valid and properly formatted
-   */
-  function validateUrl(url) {
-    if (typeof url !== 'string' || url.length === 0) {
-      return false;
-    }
-    
-    try {
-      const urlObj = new URL(url);
-      // Check if it's a valid HTTP/HTTPS URL
-      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
    * Non-Markdown Content Handling Functions
    */
   
@@ -359,20 +340,6 @@
     // Fallback to body content if no specific container found
     const bodyText = document.body.textContent.trim();
     return bodyText;
-  }
-
-  /**
-   * Detects if content appears to be Markdown based on syntax patterns
-   * @param {string} content - The content to analyze
-   * @returns {boolean} True if content appears to be Markdown
-   */
-  function detectMarkdownContent(content) {
-    if (typeof content !== 'string' || content.length === 0) {
-      return false;
-    }
-    
-    const analysis = analyzeContentType(content);
-    return analysis.isMarkdown;
   }
 
   /**
@@ -746,39 +713,6 @@
     } catch (error) {
       const result = handleError(error, context, category);
       return fallbackValue !== null ? fallbackValue : result;
-    }
-  }
-
-  /**
-   * Gets error log for debugging
-   * @returns {Array} Array of logged errors
-   */
-  function getErrorLog() {
-    try {
-      // Check if sessionStorage is available (not available in Node.js test environment)
-      if (typeof sessionStorage !== 'undefined') {
-        return JSON.parse(sessionStorage.getItem('slack-markdown-renderer-errors') || '[]');
-      } else {
-        return []; // Return empty array in test environment
-      }
-    } catch (error) {
-      console.warn('Slack Markdown Renderer: Could not retrieve error log:', error);
-      return [];
-    }
-  }
-
-  /**
-   * Clears error log
-   */
-  function clearErrorLog() {
-    try {
-      // Check if sessionStorage is available (not available in Node.js test environment)
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('slack-markdown-renderer-errors');
-        console.log('Slack Markdown Renderer: Error log cleared');
-      }
-    } catch (error) {
-      console.warn('Slack Markdown Renderer: Could not clear error log:', error);
     }
   }
 
@@ -1286,32 +1220,6 @@
   }
 
   /**
-   * Toggles between original and rendered content
-   * @param {string} mode - 'raw' for original content, 'rendered' for HTML content
-   * @param {string} styledHTML - The styled HTML content (required for 'rendered' mode)
-   * @returns {boolean} True if toggle was successful
-   */
-  function toggleContent(mode, styledHTML = null) {
-    if (mode !== 'raw' && mode !== 'rendered') {
-      throw new Error('Mode must be either "raw" or "rendered"');
-    }
-    
-    try {
-      if (mode === 'rendered') {
-        if (!styledHTML) {
-          throw new Error('Styled HTML is required for rendered mode');
-        }
-        return replaceContentWithHTML(styledHTML);
-      } else {
-        return restoreOriginalContent();
-      }
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error toggling content:', error);
-      return false;
-    }
-  }
-
-  /**
    * Gets the current content state
    * @returns {Object} Current state information
    */
@@ -1460,24 +1368,6 @@
       console.error('Slack Markdown Renderer: Error adding toggle button to page:', error);
       return false;
     }
-  }
-
-  /**
-   * Removes the toggle button from the page
-   * @returns {boolean} True if button was successfully removed
-   */
-  function removeToggleButtonFromPage() {
-    if (toggleButton && toggleButton.parentNode) {
-      try {
-        toggleButton.parentNode.removeChild(toggleButton);
-        console.log('Slack Markdown Renderer: Toggle button removed from page');
-        return true;
-      } catch (error) {
-        console.error('Slack Markdown Renderer: Error removing toggle button:', error);
-        return false;
-      }
-    }
-    return false;
   }
 
   /**
@@ -2340,7 +2230,7 @@
       
       // Step 8: Toggle Button Creation and Integration
       
-      const toggleButton = safeExecute(
+      const createdButton = safeExecute(
         () => createToggleButton(),
         'Toggle button creation',
         ERROR_CATEGORIES.DOM,
@@ -2348,7 +2238,7 @@
       );
       
       let toggleButtonAdded = false;
-      if (toggleButton) {
+      if (createdButton) {
         toggleButtonAdded = safeExecute(
           () => addToggleButtonToPage(),
           'Toggle button addition',
@@ -2405,7 +2295,7 @@
           },
           syntaxHighlighting: syntaxHighlightingApplied,
           toggleButton: {
-            created: !!toggleButton,
+            created: !!createdButton,
             added: toggleButtonAdded
           }
         }
