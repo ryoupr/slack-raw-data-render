@@ -35,9 +35,8 @@ Slack Markdown Renderer is a Chrome extension that renders Markdown content in S
 ## Permissions Explanation
 
 ### activeTab Permission
-- **Purpose**: Allows the extension to read content from the currently active Slack file page
-- **Scope**: Only works when you actively visit a Slack RAW file page
-- **Usage**: Required to access Markdown content for rendering
+- **Purpose**: This permission is not currently required. The extension operates via content scripts with URL matching.
+- **Note**: If future features require programmatic tab access, this permission may be re-added.
 
 ### Host Permission (https://files.slack.com/files-pri/*)
 - **Purpose**: Enables automatic activation on Slack RAW file pages
@@ -65,8 +64,8 @@ We may update this privacy policy from time to time. Any changes will be posted 
 ## Contact Information
 
 If you have questions about this privacy policy, please contact us through:
-- GitHub Issues: [Repository URL]
-- Email: [Your contact email]
+- GitHub Issues: https://github.com/ryou6152/slack-raw-data-render/issues
+- Email: (See GitHub profile)
 
 ## Compliance
 

@@ -10,6 +10,18 @@
   console.log('Slack Markdown Renderer: Content script loaded');
 
   /**
+   * Escapes HTML special characters to prevent XSS
+   * @param {string} str - The string to escape
+   * @returns {string} The escaped string
+   */
+  function escapeHTML(str) {
+    if (typeof str !== 'string') return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  /**
    * URL Detection and Validation Functions
    */
   
@@ -209,12 +221,12 @@
       notification.innerHTML = `
         <div class="info-notice">
           <p><strong>ℹ️ Slack Markdown Renderer</strong></p>
-          <p>${reason}</p>
+          <p>${escapeHTML(reason)}</p>
           ${confidence > 0 ? `
             <details>
               <summary>Analysis details</summary>
               <p>Confidence: ${(confidence * 100).toFixed(1)}%</p>
-              ${features.length > 0 ? `<p>Detected features: ${features.join(', ')}</p>` : ''}
+              ${features.length > 0 ? `<p>Detected features: ${escapeHTML(features.join(', '))}</p>` : ''}
             </details>
           ` : ''}
         </div>
@@ -385,23 +397,6 @@
   }
 
   /**
-   * Enhanced content analysis that considers non-Markdown content types
-   * @param {string} content - The content to analyze
-   * @returns {Object} Enhanced analysis result
-   */
-  function enhancedContentAnalysis(content) {
-    const markdownAnalysis = analyzeContentType(content);
-    const structuredAnalysis = analyzeStructuredContent(content);
-    
-    return {
-      markdown: markdownAnalysis,
-      structured: structuredAnalysis,
-      recommendation: markdownAnalysis.isMarkdown ? 'process_as_markdown' : 'preserve_original',
-      confidence: Math.max(markdownAnalysis.confidence, structuredAnalysis.confidence),
-      contentType: structuredAnalysis.isStructured ? structuredAnalysis.type : 'plain_text'
-    };
-  }
-
   /**
    * Content Analysis Functions
    */
@@ -653,11 +648,11 @@
           <p>Displaying original content instead.</p>
           <details>
             <summary>Error details</summary>
-            <pre>${error.message}</pre>
+            <pre>${escapeHTML(error.message)}</pre>
           </details>
         </div>
         <div class="original-content">
-          <pre>${content || 'No content available'}</pre>
+          <pre>${escapeHTML(content || 'No content available')}</pre>
         </div>
       </div>
     `;
@@ -689,12 +684,14 @@
       // Try to show error notification without breaking the page
       const notification = document.createElement('div');
       notification.className = 'slack-markdown-renderer-error-notification';
-      notification.innerHTML = `
-        <div style="background: #fff3cd; border: 1px solid #ffeaa7; color: #856404; padding: 10px; margin: 10px 0; border-radius: 4px;">
-          <strong>⚠️ Slack Markdown Renderer Error</strong><br>
-          Could not modify page content. The extension may not work properly on this page.
-        </div>
-      `;
+      const inner = document.createElement('div');
+      inner.style.cssText = 'background:#fff3cd;border:1px solid #ffeaa7;color:#856404;padding:10px;margin:10px 0;border-radius:4px';
+      const strong = document.createElement('strong');
+      strong.textContent = '⚠️ Slack Markdown Renderer Error';
+      inner.appendChild(strong);
+      inner.appendChild(document.createElement('br'));
+      inner.appendChild(document.createTextNode('Could not modify page content. The extension may not work properly on this page.'));
+      notification.appendChild(inner);
       
       // Try to add notification to body
       if (document.body) {
@@ -975,41 +972,6 @@
   }
 
   /**
-   * Wrapper function for safe Markdown parsing with error handling
-   * @param {string} content - The content to parse
-   * @returns {Object} Result object with success status and content/error
-   */
-  function safeParseMarkdown(content) {
-    // Input validation for error isolation
-    if (!content || typeof content !== 'string') {
-      return {
-        success: false,
-        html: null,
-        error: 'Invalid content',
-        fallbackHTML: null
-      };
-    }
-    
-    try {
-      const htmlContent = parseMarkdown(content);
-      return {
-        success: true,
-        html: htmlContent,
-        error: null
-      };
-    } catch (error) {
-      // Use the comprehensive error handler
-      const errorResult = handleParsingError(error, content);
-      return {
-        success: false,
-        html: null,
-        error: error.message,
-        fallbackHTML: errorResult.styledHTML
-      };
-    }
-  }
-
-  /**
    * Generates styled HTML with proper CSS classes and structure
    * @param {string} htmlContent - The HTML content from Markdown parsing
    * @returns {string} The styled HTML with wrapper elements
@@ -1032,169 +994,12 @@
   }
 
   /**
-   * Complete Markdown processing pipeline (async version)
+   * Complete Markdown processing pipeline
    * @param {string} markdownContent - The raw Markdown content
    * @param {Function} progressCallback - Optional callback for progress updates
    * @returns {Promise<Object>} Processing result with HTML and metadata
    */
   async function processMarkdownContent(markdownContent, progressCallback = null) {
-    // Yield control to allow UI updates
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
-    if (progressCallback) {
-      progressCallback({ stage: 'parsing', progress: 0.2 });
-    }
-    
-    const result = await safeParseMarkdownAsync(markdownContent);
-    
-    if (!result.success) {
-      return {
-        success: false,
-        html: null,
-        styledHTML: result.fallbackHTML || null,
-        error: result.error,
-        fallbackUsed: !!result.fallbackHTML
-      };
-    }
-    
-    // Yield control after parsing
-    await new Promise(resolve => setTimeout(resolve, 0));
-    
-    if (progressCallback) {
-      progressCallback({ stage: 'styling', progress: 0.7 });
-    }
-    
-    try {
-      const styledHTML = generateStyledHTML(result.html);
-      
-      if (progressCallback) {
-        progressCallback({ stage: 'complete', progress: 1.0 });
-      }
-      
-      return {
-        success: true,
-        html: result.html,
-        styledHTML: styledHTML,
-        error: null,
-        fallbackUsed: false
-      };
-    } catch (error) {
-      logError(error, 'HTML styling generation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM, {
-        htmlLength: result.html?.length || 0
-      });
-      
-      // Fallback: return unstyled HTML wrapped in basic container
-      const fallbackHTML = `
-        <div class="slack-markdown-renderer-content error-fallback">
-          <div class="error-notice">
-            <p><strong>⚠️ Styling failed</strong></p>
-            <p>Displaying unstyled content.</p>
-          </div>
-          <div class="unstyled-content">
-            ${result.html}
-          </div>
-        </div>
-      `;
-      
-      return {
-        success: false,
-        html: result.html,
-        styledHTML: fallbackHTML,
-        error: `Failed to generate styled HTML: ${error.message}`,
-        fallbackUsed: true
-      };
-    }
-  }
-
-  /**
-   * Synchronous version of processMarkdownContent for backward compatibility
-   * @param {string} markdownContent - The raw Markdown content
-   * @returns {Object} Processing result with HTML and metadata
-   */
-  function processMarkdownContentSync(markdownContent) {
-    // Input validation for error isolation
-    if (!markdownContent || typeof markdownContent !== 'string') {
-      return {
-        success: false,
-        html: null,
-        styledHTML: null,
-        error: 'Invalid content',
-        fallbackUsed: false
-      };
-    }
-    
-    const result = safeParseMarkdown(markdownContent);
-    
-    if (!result.success) {
-      return {
-        success: false,
-        html: null,
-        styledHTML: result.fallbackHTML || null,
-        error: result.error,
-        fallbackUsed: !!result.fallbackHTML
-      };
-    }
-    
-    try {
-      const styledHTML = generateStyledHTML(result.html);
-      return {
-        success: true,
-        html: result.html,
-        styledHTML: styledHTML,
-        error: null,
-        fallbackUsed: false
-      };
-    } catch (error) {
-      logError(error, 'HTML styling generation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.MEDIUM, {
-        htmlLength: result.html?.length || 0
-      });
-      
-      // Fallback: return unstyled HTML wrapped in basic container
-      const fallbackHTML = `
-        <div class="slack-markdown-renderer-content error-fallback">
-          <div class="error-notice">
-            <p><strong>⚠️ Styling failed</strong></p>
-            <p>Displaying unstyled content.</p>
-          </div>
-          <div class="unstyled-content">
-            ${result.html}
-          </div>
-        </div>
-      `;
-      
-      return {
-        success: false,
-        html: result.html,
-        styledHTML: fallbackHTML,
-        error: `Failed to generate styled HTML: ${error.message}`,
-        fallbackUsed: true
-      };
-    }
-  }
-
-  /**
-   * Main processMarkdownContent function that works in both sync and async contexts
-   * @param {string} markdownContent - The raw Markdown content
-   * @param {Function} progressCallback - Optional callback for progress updates
-   * @returns {Object} Processing result with HTML and metadata
-   */
-  function processMarkdownContent(markdownContent, progressCallback = null) {
-    // For backward compatibility, if no progress callback is provided, use sync version
-    if (!progressCallback) {
-      return processMarkdownContentSync(markdownContent);
-    }
-    
-    // If progress callback is provided, use async version
-    return processMarkdownContentAsync(markdownContent, progressCallback);
-  }
-
-  /**
-   * Async version of processMarkdownContent
-   * @param {string} markdownContent - The raw Markdown content
-   * @param {Function} progressCallback - Optional callback for progress updates
-   * @returns {Promise<Object>} Processing result with HTML and metadata
-   */
-  async function processMarkdownContentAsync(markdownContent, progressCallback = null) {
     // Input validation for error isolation
     if (!markdownContent || typeof markdownContent !== 'string') {
       return {
@@ -1479,15 +1284,9 @@
       }
     }
     
-    // Fallback: look for any element containing substantial text content
-    const allElements = document.querySelectorAll('*');
-    for (const element of allElements) {
-      if (element.children.length === 0 && 
-          element.textContent.trim().length > 100 &&
-          !element.closest('script') && 
-          !element.closest('style')) {
-        return element;
-      }
+    // Fallback: look for the body element itself if it has direct text content
+    if (document.body && document.body.textContent.trim().length > 100) {
+      return document.body;
     }
     
     return null;
@@ -1652,34 +1451,6 @@
         progressCallback({ stage: 'complete', progress: 1.0 });
       }
       
-      return {
-        success: success,
-        state: getContentState(),
-        error: null,
-        fallbackUsed: false
-      };
-    } catch (error) {
-      // Try to handle the error gracefully
-      const errorResult = handleDOMError(error, currentContentContainer || findContentContainer());
-      
-      return {
-        success: false,
-        state: getContentState(),
-        error: error.message,
-        fallbackUsed: errorResult.fallbackUsed,
-        notificationShown: errorResult.notificationShown
-      };
-    }
-  }
-
-  /**
-   * Synchronous version of performContentReplacement for backward compatibility
-   * @param {string} styledHTML - The styled HTML to display
-   * @returns {Object} Replacement result with success status
-   */
-  function performContentReplacementSync(styledHTML) {
-    try {
-      const success = replaceContentWithHTML(styledHTML);
       return {
         success: success,
         state: getContentState(),
@@ -1900,58 +1671,12 @@
   }
 
   /**
-   * Synchronous version of switchToRenderedView for backward compatibility
-   * @returns {boolean} True if switch was successful
-   */
-  function switchToRenderedViewSync() {
-    if (!processedMarkdownHTML) {
-      console.error('Slack Markdown Renderer: No processed HTML available for rendered view');
-      return false;
-    }
-    
-    try {
-      const success = replaceContentWithHTML(processedMarkdownHTML);
-      if (success) {
-        // Re-apply styling and syntax highlighting
-        safeExecute(() => applyBaseStyles(), 'Base styles application', ERROR_CATEGORIES.DOM);
-        safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
-        
-        const container = currentContentContainer || findContentContainer();
-        if (container) {
-          applySyntaxHighlightingSync(container);
-        }
-        
-        updateToggleButton('rendered');
-        saveSessionPreference('rendered');
-        console.log('Slack Markdown Renderer: Switched to rendered view');
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error switching to rendered view:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Toggles between RAW and rendered views (async version)
+   * Toggles between RAW and rendered views
    * @returns {Promise<boolean>} True if toggle was successful
    */
   async function toggleView() {
     if (currentView === 'raw') {
       return await switchToRenderedView();
-    } else {
-      return switchToRawView();
-    }
-  }
-
-  /**
-   * Synchronous version of toggleView for backward compatibility
-   * @returns {boolean} True if toggle was successful
-   */
-  function toggleViewSync() {
-    if (currentView === 'raw') {
-      return switchToRenderedViewSync();
     } else {
       return switchToRawView();
     }
@@ -2122,87 +1847,6 @@
           await new Promise(resolve => setTimeout(resolve, 0));
         }
       }
-      
-      console.log(`Slack Markdown Renderer: Applied syntax highlighting to ${highlightedCount} code blocks`);
-      return highlightedCount > 0;
-      
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying syntax highlighting:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Synchronous version of applySyntaxHighlighting for backward compatibility
-   * @param {HTMLElement} container - Container with rendered HTML
-   * @returns {boolean} True if highlighting was successfully applied
-   */
-  function applySyntaxHighlightingSync(container) {
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container provided for syntax highlighting');
-      return false;
-    }
-    
-    if (typeof Prism === 'undefined') {
-      console.warn('Slack Markdown Renderer: Prism.js not available for syntax highlighting');
-      return false;
-    }
-    
-    try {
-      // Configure Prism if not already done
-      configurePrismOptions();
-      
-      // Find all code blocks
-      const codeBlocks = container.querySelectorAll('pre code');
-      let highlightedCount = 0;
-      
-      codeBlocks.forEach((codeElement, index) => {
-        try {
-          const preElement = codeElement.parentElement;
-          const codeText = codeElement.textContent || '';
-          
-          if (codeText.trim().length === 0) {
-            return; // Skip empty code blocks
-          }
-          
-          // Detect language
-          let language = 'text';
-          
-          // Check if language is specified in class name
-          const classMatch = codeElement.className.match(/language-(\w+)/);
-          if (classMatch) {
-            language = classMatch[1].toLowerCase();
-          } else {
-            // Try to detect language from content
-            language = detectCodeLanguage(codeText);
-          }
-          
-          // Ensure we have the language in Prism
-          if (!Prism.languages[language]) {
-            language = 'text';
-          }
-          
-          // Apply language class
-          codeElement.className = `language-${language}`;
-          preElement.className = `language-${language}`;
-          
-          // Add language label
-          preElement.setAttribute('data-language', language);
-          
-          // Apply syntax highlighting
-          if (language !== 'text' && Prism.languages[language]) {
-            const highlightedCode = Prism.highlight(codeText, Prism.languages[language], language);
-            codeElement.innerHTML = highlightedCode;
-            highlightedCount++;
-          }
-          
-          // Add copy button
-          addCopyButtonToCodeBlock(preElement, codeText);
-          
-        } catch (error) {
-          console.warn(`Slack Markdown Renderer: Error highlighting code block ${index}:`, error);
-        }
-      });
       
       console.log(`Slack Markdown Renderer: Applied syntax highlighting to ${highlightedCount} code blocks`);
       return highlightedCount > 0;
@@ -2673,19 +2317,6 @@
         toggleButton.style.opacity = '1';
         toggleButton.style.cursor = 'pointer';
       }
-    }
-  }
-
-  /**
-   * Synchronous version of handleToggleClick for backward compatibility
-   */
-  function handleToggleClickSync() {
-    console.log('Slack Markdown Renderer: Toggle button clicked, current view:', currentView);
-    
-    const success = toggleViewSync();
-    if (!success) {
-      console.error('Slack Markdown Renderer: Failed to toggle view');
-      // Could show user notification here in the future
     }
   }
 
@@ -3214,19 +2845,6 @@
       
       if (workflowResult.success) {
         console.log('✅ Extension initialization completed successfully');
-        console.log('Workflow result:', workflowResult);
-        
-        // Log successful initialization for debugging
-        logError(
-          new Error('Extension initialized successfully'),
-          'Successful initialization',
-          ERROR_CATEGORIES.VALIDATION,
-          ERROR_SEVERITY.LOW,
-          {
-            workflowResult: workflowResult,
-            finalState: workflowResult.state
-          }
-        );
         
       } else {
         console.log('⚠️ Extension initialization completed with limitations');
@@ -3260,12 +2878,14 @@
       try {
         const errorNotification = document.createElement('div');
         errorNotification.className = 'slack-markdown-renderer-error-notification';
-        errorNotification.innerHTML = `
-          <div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; margin: 10px 0; border-radius: 6px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px;">
-            <strong>⚠️ Slack Markdown Renderer Error</strong><br>
-            The extension encountered an error during initialization. Please refresh the page to try again.
-          </div>
-        `;
+        const inner = document.createElement('div');
+        inner.style.cssText = 'background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;padding:12px;margin:10px 0;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px';
+        const strong = document.createElement('strong');
+        strong.textContent = '⚠️ Slack Markdown Renderer Error';
+        inner.appendChild(strong);
+        inner.appendChild(document.createElement('br'));
+        inner.appendChild(document.createTextNode('The extension encountered an error during initialization. Please refresh the page to try again.'));
+        errorNotification.appendChild(inner);
         
         if (document.body) {
           document.body.insertBefore(errorNotification, document.body.firstChild);

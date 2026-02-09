@@ -155,28 +155,8 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
     return content;
   };
   
-  // Load the rest of content script for initialization, but preserve our test functions
-  try {
-    const contentScript = fs.readFileSync('content-script.js', 'utf8');
-    
-    // Store our test functions before loading content script
-    const testAnalyzeContentType = global.analyzeContentType;
-    const testExtractFileExtension = global.extractFileExtension;
-    
-    const testableCode = contentScript
-      .replace(/\(function\(\) \{/, '')
-      .replace(/\}\)\(\);$/, '')
-      .replace(/'use strict';/, '');
-    
-    eval(testableCode);
-    
-    // Restore our test functions to ensure consistency
-    global.analyzeContentType = testAnalyzeContentType;
-    global.extractFileExtension = testExtractFileExtension;
-    
-  } catch (error) {
-    console.warn('Could not load full content script:', error.message);
-  }
+  // Note: content-script.js functions are defined above as test-safe versions.
+  // The IIFE-wrapped content-script.js cannot be safely loaded in Node.js.
 }
 
 function runPropertyBasedTests() {
