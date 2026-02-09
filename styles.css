@@ -68,7 +68,7 @@ pre.slack-markdown-rendered {
 /* TOC toggle button */
 .slack-markdown-toc-toggle {
   position: fixed;
-  top: 8px;
+  top: 20px;
   left: 8px;
   z-index: 10001;
   width: 32px;
