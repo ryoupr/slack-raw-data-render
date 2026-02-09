@@ -1660,33 +1660,6 @@
   }
 
   /**
-   * Configures syntax highlighting theme
-   * @param {string} theme - Theme name ('default', 'dark')
-   * @returns {boolean} True if theme was successfully applied
-   */
-  function setSyntaxHighlightingTheme(theme = 'default') {
-    const container = currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for syntax highlighting theme');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (!renderedContent) {
-        console.warn('Slack Markdown Renderer: No rendered content found for syntax highlighting theme');
-        return false;
-      }
-      
-      console.log(`Slack Markdown Renderer: Syntax highlighting theme set to ${theme}`);
-      return true;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error setting syntax highlighting theme:', error);
-      return false;
-    }
-  }
-
-  /**
    * Style Controller Functions
    */
   
@@ -2039,13 +2012,6 @@
       
       if (container) {
         syntaxHighlightingApplied = await applySyntaxHighlighting(container, null);
-        
-        // Set syntax highlighting theme
-        safeExecute(
-          () => setSyntaxHighlightingTheme('default'),
-          'Syntax highlighting theme application',
-          ERROR_CATEGORIES.DOM
-        );
       }
       
       // Step 8: Toggle Button Creation and Integration

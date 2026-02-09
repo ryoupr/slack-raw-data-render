@@ -101,7 +101,7 @@ function loadContentScriptFunctions() {
       });
       
       // Apply new theme
-      const themeClass = global.BACKGROUND_THEMES[theme.toUpperCase().replace('-', '_')] || global.BACKGROUND_THEMES.WHITE;
+      const themeClass = global.BACKGROUND_THEMES[theme.toUpperCase().replace(/-/g, '_')] || global.BACKGROUND_THEMES.WHITE;
       renderedContent.classList.add(themeClass);
       
       // Save theme preference
@@ -130,7 +130,7 @@ function loadContentScriptFunctions() {
     try {
       if (typeof sessionStorage !== 'undefined') {
         const savedTheme = sessionStorage.getItem('slack-markdown-renderer-theme-preference');
-        if (savedTheme && Object.keys(global.BACKGROUND_THEMES).includes(savedTheme.toUpperCase().replace('-', '_'))) {
+        if (savedTheme && Object.keys(global.BACKGROUND_THEMES).includes(savedTheme.toUpperCase().replace(/-/g, '_'))) {
           console.log(`Slack Markdown Renderer: Theme preference loaded: ${savedTheme}`);
           return savedTheme;
         }
