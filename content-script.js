@@ -855,10 +855,12 @@
     }
     
     const cleanHTML = sanitizeHTML(htmlContent);
+    // Convert loose lists (li containing p) to tight lists for compact rendering
+    const tightHTML = cleanHTML.replace(/<li>\s*<p>/g, '<li>').replace(/<\/p>\s*<\/li>/g, '</li>');
     return `
       <div class="slack-markdown-renderer-content">
         <div class="markdown-body">
-          ${cleanHTML}
+          ${tightHTML}
         </div>
       </div>
     `;
