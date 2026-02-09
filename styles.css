@@ -216,30 +216,10 @@ pre.slack-markdown-rendered {
 .markdown-body li {
   margin: 0;
   padding: 0;
-  line-height: 1;
 }
 
-.markdown-body li > p,
-.markdown-body li p,
-.markdown-body li > p:first-child,
-.markdown-body li > p:last-child {
-  margin: 0 !important;
-  padding: 0 !important;
-  line-height: 1.4;
-}
-
-.slack-markdown-renderer-content li,
-.slack-markdown-renderer-content li p,
-.slack-markdown-renderer-content li * {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  line-height: 1 !important;
-}
-
-.markdown-body li br {
-  display: none;
+.markdown-body li > p {
+  margin: 0;
 }
 
 .markdown-body li:last-child {
