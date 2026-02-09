@@ -212,8 +212,17 @@
 .markdown-body li > p:first-child,
 .markdown-body li > p:last-child {
   margin: 0 !important;
-  padding: 0;
+  padding: 0 !important;
   line-height: 1.4;
+}
+
+.slack-markdown-renderer-content li,
+.slack-markdown-renderer-content li p,
+.slack-markdown-renderer-content li * {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
 }
 
 .markdown-body li br {
