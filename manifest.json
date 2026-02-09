@@ -3,7 +3,7 @@
   "name": "Slack Markdown Renderer",
   "version": "1.0.0",
   "description": "Renders Markdown content in Slack RAW file pages",
-  "permissions": [],
+  "permissions": ["storage"],
   "content_scripts": [
     {
       "matches": [
@@ -23,7 +23,8 @@
     }
   ],
   "action": {
-    "default_title": "Slack Markdown Renderer"
+    "default_title": "Slack Markdown Renderer",
+    "default_popup": "popup.html"
   },
   "icons": {
     "16": "icons/icon16.png",

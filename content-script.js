@@ -737,7 +737,7 @@
     try {
       // Configure marked options for security and features
       marked.setOptions({
-        breaks: true,        // Convert line breaks to <br>
+        breaks: false,       // Don't convert line breaks to <br>
         gfm: true,          // Enable GitHub Flavored Markdown
         smartLists: true,   // Use smarter list behavior
         smartypants: false, // Don't use smart quotes
@@ -855,10 +855,16 @@
     }
     
     const cleanHTML = sanitizeHTML(htmlContent);
+    // Convert loose lists (li containing p) to tight lists for compact rendering
+    const tightHTML = cleanHTML
+      .replace(/<li>\s*<p>/g, '<li>').replace(/<\/p>\s*<\/li>/g, '</li>')
+      .replace(/<p>\s*<\/p>/g, '')           // Remove empty paragraphs
+      .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '') // Remove paragraphs containing only br
+      .replace(/(<br\s*\/?>){2,}/g, '<br>'); // Collapse consecutive br tags
     return `
       <div class="slack-markdown-renderer-content">
         <div class="markdown-body">
-          ${cleanHTML}
+          ${tightHTML}
         </div>
       </div>
     `;
@@ -1900,6 +1906,73 @@
   }
 
   /**
+   * Generates a Table of Contents sidebar from headings
+   */
+  function generateTOC() {
+    const body = document.querySelector('.markdown-body');
+    if (!body) return;
+
+    const headings = body.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length < 2) return;
+
+    // Add IDs to headings
+    headings.forEach((h, i) => {
+      h.id = 'heading-' + i;
+    });
+
+    // Build TOC HTML
+    const tocItems = Array.from(headings).map((h, i) => {
+      const level = parseInt(h.tagName[1]);
+      const text = escapeHTML(h.textContent.trim());
+      return `<a href="#heading-${i}" class="toc-item toc-h${level}" title="${text}">${text}</a>`;
+    }).join('');
+
+    const toc = document.createElement('nav');
+    toc.className = 'slack-markdown-toc';
+    toc.innerHTML = `<div class="toc-title">目次</div>${tocItems}`;
+    document.body.appendChild(toc);
+
+    // Toggle button
+    const tocBtn = document.createElement('button');
+    tocBtn.className = 'slack-markdown-toc-toggle';
+    tocBtn.textContent = '☰';
+    tocBtn.title = '目次の表示/非表示';
+    document.body.appendChild(tocBtn);
+
+    tocBtn.addEventListener('click', () => {
+      const hidden = toc.classList.toggle('toc-hidden');
+      document.querySelector('pre.slack-markdown-rendered').classList.toggle('toc-collapsed', hidden);
+    });
+
+    // Smooth scroll on click
+    toc.addEventListener('click', (e) => {
+      const link = e.target.closest('a');
+      if (!link) return;
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Highlight current heading on scroll
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const scrollY = window.scrollY + 60;
+        let current = null;
+        headings.forEach((h, i) => {
+          if (h.offsetTop <= scrollY) current = i;
+        });
+        toc.querySelectorAll('.toc-item').forEach((a, i) => {
+          a.classList.toggle('active', i === current);
+        });
+        ticking = false;
+      });
+    });
+  }
+
+  /**
    * Complete workflow integration function
    * Connects URL detection, content analysis, parsing, rendering, and toggle functionality
    * @returns {Promise<Object>} Complete workflow result
@@ -2058,6 +2131,13 @@
         ERROR_CATEGORIES.VALIDATION
       );
       
+      // Step 10: Generate Table of Contents
+      safeExecute(
+        () => generateTOC(),
+        'TOC generation',
+        ERROR_CATEGORIES.DOM
+      );
+
       // Final State Verification
       const finalState = getCurrentState();
       
@@ -2177,5 +2257,23 @@
 
   // Initialize the extension when the script loads
   initializeExtension();
+
+  // Listen for line-height adjustment from popup
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'setLineHeight') {
+      const el = document.querySelector('.markdown-body');
+      if (el) el.style.lineHeight = msg.value;
+    }
+  });
+
+  // Apply saved line-height on load
+  if (chrome.storage) {
+    chrome.storage.local.get('lineHeight', (data) => {
+      if (data.lineHeight) {
+        const el = document.querySelector('.markdown-body');
+        if (el) el.style.lineHeight = data.lineHeight;
+      }
+    });
+  }
   
 })();
