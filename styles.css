@@ -185,8 +185,7 @@
 
 /* Paragraph */
 .markdown-body p {
-  margin-top: 0;
-  margin-bottom: 0.4em;
+  margin: 0 0 0.4em 0;
   color: var(--text-primary);
 }
 
@@ -209,8 +208,12 @@
 }
 
 .markdown-body li > p,
-.markdown-body li p {
-  margin: 0;
+.markdown-body li p,
+.markdown-body li > p:first-child,
+.markdown-body li > p:last-child {
+  margin: 0 !important;
+  padding: 0;
+  line-height: 1.4;
 }
 
 .markdown-body li:last-child {
