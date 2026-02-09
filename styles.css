@@ -28,6 +28,7 @@ pre.slack-markdown-rendered {
   padding: 16px 0;
   font-size: 12px;
   z-index: 9999;
+  transition: transform 0.2s ease;
 }
 
 .toc-title {
@@ -60,9 +61,41 @@ pre.slack-markdown-rendered {
 .toc-h5 { padding-left: 48px; }
 .toc-h6 { padding-left: 60px; }
 
+.slack-markdown-toc.toc-hidden {
+  transform: translateX(-100%);
+}
+
+/* TOC toggle button */
+.slack-markdown-toc-toggle {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10001;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.slack-markdown-toc-toggle:hover {
+  background: #f0f0f0;
+}
+
 /* Shift main content when TOC is present */
 pre.slack-markdown-rendered {
   margin-left: 220px !important;
+  transition: margin-left 0.2s ease;
+}
+
+pre.slack-markdown-rendered.toc-collapsed {
+  margin-left: 0 !important;
 }
 
 @media (max-width: 768px) {

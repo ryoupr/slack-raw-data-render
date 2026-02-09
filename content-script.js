@@ -1932,6 +1932,18 @@
     toc.innerHTML = `<div class="toc-title">目次</div>${tocItems}`;
     document.body.appendChild(toc);
 
+    // Toggle button
+    const tocBtn = document.createElement('button');
+    tocBtn.className = 'slack-markdown-toc-toggle';
+    tocBtn.textContent = '☰';
+    tocBtn.title = '目次の表示/非表示';
+    document.body.appendChild(tocBtn);
+
+    tocBtn.addEventListener('click', () => {
+      const hidden = toc.classList.toggle('toc-hidden');
+      document.querySelector('pre.slack-markdown-rendered').classList.toggle('toc-collapsed', hidden);
+    });
+
     // Smooth scroll on click
     toc.addEventListener('click', (e) => {
       const link = e.target.closest('a');
