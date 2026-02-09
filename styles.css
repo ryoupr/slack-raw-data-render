@@ -130,8 +130,8 @@
   color: var(--text-primary);
   font-weight: 600;
   line-height: 1.25;
-  margin-top: 24px;
-  margin-bottom: 8px;
+  margin-top: 0;
+  margin-bottom: 0;
   scroll-margin-top: 24px;
 }
 
@@ -139,32 +139,39 @@
   font-size: 2.25em;
   font-weight: 700;
   border-bottom: 2px solid var(--border-light);
-  padding-bottom: 0.5em;
-  margin-bottom: 16px;
+  padding-bottom: 0.3em;
+  margin-top: 1em;
+  margin-bottom: 0.4em;
 }
 
 .markdown-body h2 {
   font-size: 1.75em;
   font-weight: 600;
   border-bottom: 1px solid var(--border-light);
-  padding-bottom: 0.3em;
-  margin-bottom: 14px;
+  padding-bottom: 0.2em;
+  margin-top: 0.8em;
+  margin-bottom: 0.3em;
 }
 
 .markdown-body h3 {
   font-size: 1.375em;
   font-weight: 600;
+  margin-top: 0.6em;
+  margin-bottom: 0.2em;
 }
 
 .markdown-body h4 {
   font-size: 1.125em;
   font-weight: 600;
+  margin-top: 0.4em;
+  margin-bottom: 0.2em;
 }
 
 .markdown-body h5 {
   font-size: 1em;
   font-weight: 600;
   color: var(--text-secondary);
+  margin-top: 0.4em;
 }
 
 .markdown-body h6 {
@@ -173,59 +180,52 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  margin-top: 0.4em;
 }
 
-/* Enhanced Paragraph Styling */
+/* Paragraph */
 .markdown-body p {
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: 0.4em;
   color: var(--text-primary);
-  text-align: justify;
-  hyphens: auto;
 }
 
 .markdown-body p:last-child {
   margin-bottom: 0;
 }
 
-/* Enhanced List Styling */
+/* List Styling */
 .markdown-body ul,
 .markdown-body ol {
-  margin-top: 0;
-  margin-bottom: 4px;
+  margin: 0;
   padding-left: 2em;
   color: var(--text-primary);
 }
 
 .markdown-body li {
-  margin-bottom: 0;
+  margin: 0;
+  padding: 0;
   line-height: 1.4;
 }
 
-.markdown-body li > p {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
+.markdown-body li > p,
 .markdown-body li p {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .markdown-body li:last-child {
   margin-bottom: 0;
 }
 
-/* Nested list styling */
+/* Nested list */
 .markdown-body ul ul,
 .markdown-body ol ol,
 .markdown-body ul ol,
 .markdown-body ol ul {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
 }
 
-/* Enhanced Code Block Styling */
+/* Code Block */
 .markdown-body pre {
   background-color: var(--background-code);
   border: 1px solid var(--border-light);
@@ -233,8 +233,8 @@
   font-size: 14px;
   line-height: 1.5;
   overflow: auto;
-  padding: 16px;
-  margin-bottom: 14px;
+  padding: 12px;
+  margin: 0.4em 0;
   font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -265,7 +265,7 @@
   word-wrap: normal;
 }
 
-/* Enhanced Link Styling */
+/* Link */
 .markdown-body a {
   color: var(--link-color);
   text-decoration: none;
@@ -286,12 +286,12 @@
   border-radius: 2px;
 }
 
-/* Enhanced Blockquote Styling */
+/* Blockquote */
 .markdown-body blockquote {
   border-left: 4px solid var(--border-medium);
   color: var(--text-secondary);
-  margin: 0 0 20px 0;
-  padding: 0 1.5em;
+  margin: 0.4em 0;
+  padding: 0 1em;
   font-style: italic;
   background-color: rgba(0, 0, 0, 0.02);
   border-radius: 0 4px 4px 0;
@@ -309,12 +309,12 @@
   text-align: left;
 }
 
-/* Enhanced Table Styling */
+/* Table */
 .markdown-body table {
   border-collapse: collapse;
   border-spacing: 0;
   display: block;
-  margin-bottom: 14px;
+  margin: 0.4em 0;
   overflow: auto;
   width: 100%;
   border: 1px solid var(--border-light);
@@ -325,7 +325,7 @@
 .markdown-body table th,
 .markdown-body table td {
   border: 1px solid var(--border-light);
-  padding: 12px 16px;
+  padding: 8px 12px;
   text-align: left;
   vertical-align: top;
 }
@@ -344,12 +344,12 @@
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-/* Enhanced Horizontal Rule Styling */
+/* Horizontal Rule */
 .markdown-body hr {
   background-color: var(--border-medium);
   border: 0;
   height: 2px;
-  margin: 24px 0;
+  margin: 0.8em 0;
   padding: 0;
   border-radius: 1px;
 }
