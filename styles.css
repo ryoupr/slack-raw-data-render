@@ -3,6 +3,13 @@
  * CSS styles for rendered Markdown content
  */
 
+/* Reset CSS - applied to raw file pages only */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
 /* Toggle Button Styles */
 .slack-markdown-toggle-button {
   position: fixed;
