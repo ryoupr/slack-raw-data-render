@@ -3,200 +3,6 @@
  * CSS styles for rendered Markdown content
  */
 
-/* Base container styles */
-.slack-markdown-renderer-content {
-  background-color: white;
-  padding: 20px;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  color: #333;
-  max-width: 100%;
-  word-wrap: break-word;
-}
-
-/* Markdown body styles */
-.markdown-body {
-  font-size: 16px;
-  line-height: 1.6;
-}
-
-/* Headers */
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4,
-.markdown-body h5,
-.markdown-body h6 {
-  margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.markdown-body h1 {
-  font-size: 2em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: 0.3em;
-}
-
-.markdown-body h2 {
-  font-size: 1.5em;
-  border-bottom: 1px solid #eaecef;
-  padding-bottom: 0.3em;
-}
-
-.markdown-body h3 {
-  font-size: 1.25em;
-}
-
-.markdown-body h4 {
-  font-size: 1em;
-}
-
-.markdown-body h5 {
-  font-size: 0.875em;
-}
-
-.markdown-body h6 {
-  font-size: 0.85em;
-  color: #6a737d;
-}
-
-/* Paragraphs */
-.markdown-body p {
-  margin-top: 0;
-  margin-bottom: 16px;
-}
-
-/* Lists */
-.markdown-body ul,
-.markdown-body ol {
-  margin-top: 0;
-  margin-bottom: 16px;
-  padding-left: 2em;
-}
-
-.markdown-body li {
-  margin-bottom: 0.25em;
-}
-
-.markdown-body li > p {
-  margin-bottom: 0;
-}
-
-/* Code blocks */
-.markdown-body pre {
-  background-color: #f6f8fa;
-  border-radius: 6px;
-  font-size: 85%;
-  line-height: 1.45;
-  overflow: auto;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-
-.markdown-body code {
-  background-color: rgba(175, 184, 193, 0.2);
-  border-radius: 6px;
-  font-size: 85%;
-  margin: 0;
-  padding: 0.2em 0.4em;
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
-}
-
-.markdown-body pre code {
-  background-color: transparent;
-  border-radius: 0;
-  display: inline;
-  line-height: inherit;
-  margin: 0;
-  max-width: auto;
-  padding: 0;
-  word-wrap: normal;
-}
-
-/* Links */
-.markdown-body a {
-  color: #0366d6;
-  text-decoration: none;
-}
-
-.markdown-body a:hover {
-  text-decoration: underline;
-}
-
-/* Blockquotes */
-.markdown-body blockquote {
-  border-left: 0.25em solid #dfe2e5;
-  color: #6a737d;
-  margin: 0 0 16px 0;
-  padding: 0 1em;
-}
-
-.markdown-body blockquote > :first-child {
-  margin-top: 0;
-}
-
-.markdown-body blockquote > :last-child {
-  margin-bottom: 0;
-}
-
-/* Tables */
-.markdown-body table {
-  border-collapse: collapse;
-  border-spacing: 0;
-  display: block;
-  margin-bottom: 16px;
-  overflow: auto;
-  width: 100%;
-}
-
-.markdown-body table th,
-.markdown-body table td {
-  border: 1px solid #dfe2e5;
-  padding: 6px 13px;
-}
-
-.markdown-body table th {
-  background-color: #f6f8fa;
-  font-weight: 600;
-}
-
-.markdown-body table tr:nth-child(2n) {
-  background-color: #f6f8fa;
-}
-
-/* Horizontal rules */
-.markdown-body hr {
-  background-color: #e1e4e8;
-  border: 0;
-  height: 0.25em;
-  margin: 24px 0;
-  padding: 0;
-}
-
-/* Images */
-.markdown-body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .slack-markdown-renderer-content {
-    padding: 16px;
-    margin: 8px;
-  }
-  
-  .markdown-body {
-    font-size: 14px;
-  }
-}
-
 /* Toggle Button Styles */
 .slack-markdown-toggle-button {
   position: fixed;
@@ -259,9 +65,9 @@
   }
 }
 
-/* Enhanced Typography and Spacing Rules (Requirement 5.1) */
+/* Base container styles (Requirements 5.1, 5.2) */
 .slack-markdown-renderer-content {
-  /* Enhanced typography settings */
+  /* Typography */
   font-size: 16px;
   line-height: 1.6;
   letter-spacing: 0.01em;
@@ -269,21 +75,18 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Enhanced spacing and layout */
+  /* Layout */
   margin: 0 auto;
   padding: 24px 32px;
   max-width: 900px;
   min-height: 100vh;
   box-sizing: border-box;
-}
-
-/* Color Scheme and Contrast Settings (Requirement 5.2) */
-.slack-markdown-renderer-content {
-  /* High contrast color scheme for readability */
+  
+  /* Color scheme */
   color: #1a1a1a;
   background-color: #ffffff;
   
-  /* Enhanced contrast for different elements */
+  /* CSS custom properties */
   --text-primary: #1a1a1a;
   --text-secondary: #4a4a4a;
   --text-muted: #6a737d;
@@ -791,55 +594,11 @@
   text-align: right;
 }
 
-/* Dark theme for syntax highlighting */
-.slack-markdown-renderer-content.theme-dark pre[class*="language-"] {
-  background-color: #2d3748;
-  border-color: #4a5568;
-  color: #e2e8f0;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.comment,
-.slack-markdown-renderer-content.theme-dark .token.prolog,
-.slack-markdown-renderer-content.theme-dark .token.doctype,
-.slack-markdown-renderer-content.theme-dark .token.cdata {
-  color: #a0aec0;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.property,
-.slack-markdown-renderer-content.theme-dark .token.tag,
-.slack-markdown-renderer-content.theme-dark .token.boolean,
-.slack-markdown-renderer-content.theme-dark .token.number,
-.slack-markdown-renderer-content.theme-dark .token.constant,
-.slack-markdown-renderer-content.theme-dark .token.symbol,
-.slack-markdown-renderer-content.theme-dark .token.deleted {
-  color: #f56565;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.selector,
-.slack-markdown-renderer-content.theme-dark .token.attr-name,
-.slack-markdown-renderer-content.theme-dark .token.string,
-.slack-markdown-renderer-content.theme-dark .token.char,
-.slack-markdown-renderer-content.theme-dark .token.builtin,
-.slack-markdown-renderer-content.theme-dark .token.inserted {
-  color: #68d391;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.atrule,
-.slack-markdown-renderer-content.theme-dark .token.attr-value,
-.slack-markdown-renderer-content.theme-dark .token.keyword {
-  color: #9f7aea;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.function,
-.slack-markdown-renderer-content.theme-dark .token.class-name {
-  color: #63b3ed;
-}
-
 /* Copy button for code blocks */
 .markdown-body pre[class*="language-"] .copy-button {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: 60px;
   background-color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;
@@ -992,23 +751,6 @@
   }
 }
 
-/* Critical error styles */
-.slack-markdown-renderer-content.critical-error {
-  border: 2px solid #dc3545;
-  background-color: #f8d7da;
-}
-
-.critical-error .error-notice {
-  background-color: #f8d7da;
-  border-color: #f5c6cb;
-  color: #721c24;
-}
-
-.critical-error .error-notice summary {
-  color: #721c24;
-  border-bottom-color: #dc3545;
-}
-
 /* High contrast error styles for accessibility */
 @media (prefers-contrast: high) {
   .error-notice {
@@ -1042,78 +784,6 @@
       opacity: 1;
       transform: translateX(-50%) translateY(0);
     }
-  }
-}
-
-/* Non-Markdown Content Information Styles */
-.slack-markdown-renderer-info-notification {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10001;
-  max-width: 500px;
-  width: 90%;
-  animation: slideInFromTop 0.3s ease-out;
-}
-
-.info-notice {
-  background-color: #d1ecf1 !important;
-  border: 1px solid #bee5eb !important;
-  color: #0c5460 !important;
-  padding: 12px 16px !important;
-  margin: 0 !important;
-  border-radius: 6px !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif !important;
-  font-size: 14px !important;
-  line-height: 1.4 !important;
-}
-
-.info-notice strong {
-  display: block !important;
-  margin-bottom: 8px !important;
-  font-weight: 600 !important;
-}
-
-.info-notice p {
-  margin: 0 0 8px 0 !important;
-  font-size: 14px !important;
-  line-height: 1.4 !important;
-}
-
-.info-notice p:last-child {
-  margin-bottom: 0 !important;
-}
-
-.info-notice details {
-  margin-top: 12px !important;
-}
-
-.info-notice summary {
-  cursor: pointer !important;
-  font-weight: 500 !important;
-  color: #0a3c47 !important;
-  padding: 4px 0 !important;
-  border-bottom: 1px dotted #17a2b8 !important;
-  margin-bottom: 8px !important;
-}
-
-.info-notice summary:hover {
-  color: #062a30 !important;
-}
-
-/* High contrast info styles for accessibility */
-@media (prefers-contrast: high) {
-  .info-notice {
-    background-color: #ffffff !important;
-    border: 2px solid #000000 !important;
-    color: #000000 !important;
-  }
-  
-  .info-notice summary {
-    color: #000000 !important;
-    border-bottom-color: #000000 !important;
   }
 }
 
@@ -1225,30 +895,6 @@
   }
 }
 
-/* Loading indicator dark theme */
-.slack-markdown-loading-indicator.dark-theme {
-  background-color: rgba(45, 55, 72, 0.95);
-  border-color: #4a5568;
-  color: #e2e8f0;
-}
-
-.dark-theme .loading-spinner {
-  border-color: #4a5568;
-  border-top-color: #9f7aea;
-}
-
-.dark-theme .loading-message {
-  color: #e2e8f0;
-}
-
-.dark-theme .progress-bar {
-  background-color: #4a5568;
-}
-
-.dark-theme .progress-fill {
-  background: linear-gradient(90deg, #9f7aea, #b794f6);
-}
-
 /* Loading indicator accessibility */
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
@@ -1304,40 +950,6 @@
   outline-offset: 2px;
 }
 
-/* Loading states for different operations */
-.slack-markdown-loading-indicator.parsing .loading-spinner {
-  border-top-color: #007a5a;
-}
-
-.slack-markdown-loading-indicator.parsing .progress-fill {
-  background: linear-gradient(90deg, #007a5a, #148567);
-}
-
-.slack-markdown-loading-indicator.styling .loading-spinner {
-  border-top-color: #e36209;
-}
-
-.slack-markdown-loading-indicator.styling .progress-fill {
-  background: linear-gradient(90deg, #e36209, #f56500);
-}
-
-.slack-markdown-loading-indicator.highlighting .loading-spinner {
-  border-top-color: #6f42c1;
-}
-
-.slack-markdown-loading-indicator.highlighting .progress-fill {
-  background: linear-gradient(90deg, #6f42c1, #8a63d2);
-}
-
-.slack-markdown-loading-indicator.complete .loading-spinner {
-  border-top-color: #28a745;
-  animation: none;
-}
-
-.slack-markdown-loading-indicator.complete .progress-fill {
-  background: linear-gradient(90deg, #28a745, #34ce57);
-}
-
 /* Loading indicator animation entrance */
 .slack-markdown-loading-indicator {
   animation: fadeInScale 0.3s ease-out;
@@ -1354,58 +966,3 @@
   }
 }
 
-/* Loading indicator exit animation */
-.slack-markdown-loading-indicator.hiding {
-  animation: fadeOutScale 0.2s ease-in forwards;
-}
-
-@keyframes fadeOutScale {
-  0% {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-}
-
-/* Content type specific styling hints */
-.slack-markdown-renderer-content[data-content-type="json"] .original-content,
-.slack-markdown-renderer-content[data-content-type="xml"] .original-content,
-.slack-markdown-renderer-content[data-content-type="code"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 13px !important;
-  line-height: 1.4 !important;
-  background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}
-
-.slack-markdown-renderer-content[data-content-type="log"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 12px !important;
-  line-height: 1.3 !important;
-  background-color: #1a1a1a !important;
-  color: #e0e0e0 !important;
-  border: 1px solid #333 !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}
-
-.slack-markdown-renderer-content[data-content-type="csv"] .original-content {
-  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', 'Courier New', monospace !important;
-  font-size: 13px !important;
-  line-height: 1.5 !important;
-  background-color: #f8f9fa !important;
-  border: 1px solid #e9ecef !important;
-  border-radius: 6px !important;
-  padding: 16px !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-}

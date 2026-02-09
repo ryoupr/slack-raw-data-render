@@ -1,6 +1,6 @@
 # Privacy Policy for Slack Markdown Renderer
 
-**Last updated: December 25, 2025**
+**Last updated: February 10, 2026**
 
 ## Overview
 
@@ -34,11 +34,6 @@ Slack Markdown Renderer is a Chrome extension that renders Markdown content in S
 
 ## Permissions Explanation
 
-### activeTab Permission
-- **Purpose**: Allows the extension to read content from the currently active Slack file page
-- **Scope**: Only works when you actively visit a Slack RAW file page
-- **Usage**: Required to access Markdown content for rendering
-
 ### Host Permission (https://files.slack.com/files-pri/*)
 - **Purpose**: Enables automatic activation on Slack RAW file pages
 - **Scope**: Limited exclusively to Slack's file sharing domain
@@ -65,8 +60,8 @@ We may update this privacy policy from time to time. Any changes will be posted 
 ## Contact Information
 
 If you have questions about this privacy policy, please contact us through:
-- GitHub Issues: [Repository URL]
-- Email: [Your contact email]
+- GitHub Issues: https://github.com/ryou6152/slack-raw-data-render/issues
+- Email: (See GitHub profile)
 
 ## Compliance
 

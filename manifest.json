@@ -3,9 +3,7 @@
   "name": "Slack Markdown Renderer",
   "version": "1.0.0",
   "description": "Renders Markdown content in Slack RAW file pages",
-  "permissions": [
-    "activeTab"
-  ],
+  "permissions": [],
   "content_scripts": [
     {
       "matches": [
