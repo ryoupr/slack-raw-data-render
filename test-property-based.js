@@ -42,11 +42,11 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
     return document.body.textContent.trim();
   };
   
-  global.processMarkdownContent = function(content) {
+  global.processMarkdownContent = async function(content) {
     if (!content || typeof content !== 'string') {
-      return { success: false, error: 'Invalid content' };
+      return { success: false, html: '', styledHTML: '', error: 'Invalid content' };
     }
-    return { success: true, content: content };
+    return { success: true, html: content, styledHTML: `<div>${content}</div>` };
   };
   
   global.detectSlackRawUrl = function(url) {

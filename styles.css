@@ -65,9 +65,9 @@
   }
 }
 
-/* Enhanced Typography and Spacing Rules (Requirement 5.1) */
+/* Base container styles (Requirements 5.1, 5.2) */
 .slack-markdown-renderer-content {
-  /* Enhanced typography settings */
+  /* Typography */
   font-size: 16px;
   line-height: 1.6;
   letter-spacing: 0.01em;
@@ -75,21 +75,18 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  /* Enhanced spacing and layout */
+  /* Layout */
   margin: 0 auto;
   padding: 24px 32px;
   max-width: 900px;
   min-height: 100vh;
   box-sizing: border-box;
-}
-
-/* Color Scheme and Contrast Settings (Requirement 5.2) */
-.slack-markdown-renderer-content {
-  /* High contrast color scheme for readability */
+  
+  /* Color scheme */
   color: #1a1a1a;
   background-color: #ffffff;
   
-  /* Enhanced contrast for different elements */
+  /* CSS custom properties */
   --text-primary: #1a1a1a;
   --text-secondary: #4a4a4a;
   --text-muted: #6a737d;
