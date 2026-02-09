@@ -142,8 +142,8 @@ pre.slack-markdown-rendered {
   color: var(--text-primary);
   font-weight: 600;
   line-height: 1.25;
-  margin-top: 0;
-  margin-bottom: 0;
+  margin-top: 0.5em;
+  margin-bottom: 0.2em;
   scroll-margin-top: 24px;
 }
 
