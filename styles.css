@@ -211,7 +211,7 @@
 .markdown-body li {
   margin: 0;
   padding: 0;
-  line-height: 1.4;
+  line-height: 1;
 }
 
 .markdown-body li > p,
