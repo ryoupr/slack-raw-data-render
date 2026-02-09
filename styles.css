@@ -10,6 +10,11 @@
   box-sizing: border-box;
 }
 
+/* Override pre container's white-space that preserves all newlines */
+pre.slack-markdown-rendered {
+  white-space: normal !important;
+}
+
 /* Toggle Button Styles */
 .slack-markdown-toggle-button {
   position: fixed;
