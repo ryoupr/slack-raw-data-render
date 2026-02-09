@@ -1377,13 +1377,6 @@
       
       const success = replaceContentWithHTML(processedMarkdownHTML);
       if (success) {
-        await new Promise(resolve => {
-          setTimeout(() => {
-            safeExecute(() => applyTypographyEnhancements(), 'Typography enhancements', ERROR_CATEGORIES.DOM);
-            resolve();
-          }, 0);
-        });
-        
         const container = currentContentContainer || findContentContainer();
         if (container) {
           await applySyntaxHighlighting(container);
@@ -1792,72 +1785,6 @@
   }
 
   /**
-   * Applies typography and spacing enhancements
-   * @returns {boolean} True if enhancements were successfully applied
-   */
-  function applyTypographyEnhancements() {
-    const container = currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for typography enhancements');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (!renderedContent) {
-        console.warn('Slack Markdown Renderer: No rendered content found for typography enhancements');
-        return false;
-      }
-      
-      // Apply enhanced typography class if not already present
-      if (!renderedContent.classList.contains('enhanced-typography')) {
-        renderedContent.classList.add('enhanced-typography');
-      }
-      
-      console.log('Slack Markdown Renderer: Typography enhancements applied');
-      return true;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying typography enhancements:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Applies color scheme and contrast settings
-   * @param {string} scheme - The color scheme ('default', 'high-contrast')
-   * @returns {boolean} True if color scheme was successfully applied
-   */
-  function applyColorScheme(scheme = 'default') {
-    const container = currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for color scheme');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (!renderedContent) {
-        console.warn('Slack Markdown Renderer: No rendered content found for color scheme');
-        return false;
-      }
-      
-      // Remove existing color scheme classes
-      renderedContent.classList.remove('high-contrast-scheme');
-      
-      // Apply new color scheme
-      if (scheme === 'high-contrast') {
-        renderedContent.classList.add('high-contrast-scheme');
-      }
-      
-      console.log(`Slack Markdown Renderer: Color scheme set to ${scheme}`);
-      return true;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying color scheme:', error);
-      return false;
-    }
-  }
-
-  /**
    * Session Preference Management Functions
    */
   
@@ -2100,14 +2027,6 @@
       
       // Step 6: Style Application and Enhancement
       
-      // Apply typography enhancements
-      const typographyApplied = safeExecute(
-        () => applyTypographyEnhancements(),
-        'Typography enhancements',
-        ERROR_CATEGORIES.DOM,
-        false
-      );
-      
       // Load and apply saved theme preference
       const savedTheme = safeExecute(
         () => loadThemePreference(),
@@ -2119,14 +2038,6 @@
       const themeApplied = safeExecute(
         () => setBackgroundTheme(savedTheme),
         'Background theme application',
-        ERROR_CATEGORIES.DOM,
-        false
-      );
-      
-      // Apply color scheme
-      const colorSchemeApplied = safeExecute(
-        () => applyColorScheme('default'),
-        'Color scheme application',
         ERROR_CATEGORIES.DOM,
         false
       );
@@ -2208,9 +2119,7 @@
           markdownProcessing: processingResult,
           contentReplacement: replacementResult,
           styleApplication: {
-            typography: typographyApplied,
-            theme: themeApplied,
-            colorScheme: colorSchemeApplied
+            theme: themeApplied
           },
           syntaxHighlighting: syntaxHighlightingApplied,
           toggleButton: {
