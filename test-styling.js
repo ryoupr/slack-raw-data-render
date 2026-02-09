@@ -1,7 +1,7 @@
 /**
  * Styling Application Unit Tests for Slack Markdown Renderer
  * Tests CSS class application and background color setting functionality
- * Requirements: 5.1, 5.2, 5.3
+ * Requirements: 5.3
  */
 
 const { JSDOM } = require('jsdom');
@@ -18,8 +18,6 @@ function setupTestEnvironment() {
           .theme-light-gray { background-color: #f8f9fa; }
           .theme-warm-white { background-color: #fefefe; }
           .theme-paper { background-color: #fdfdfd; }
-          .enhanced-typography { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-          .high-contrast-scheme { color: #000000; }
         </style>
       </head>
       <body>

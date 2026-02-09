@@ -926,6 +926,7 @@ async function runPropertyBasedTests() {
         
         // Mock setTimeout to track timing behavior
         const originalSetTimeout = global.setTimeout;
+        const originalClearTimeout = global.clearTimeout;
         global.setTimeout = (callback, delay) => {
           if (delay === testData.showDelay) {
             showTimeoutCalled = true;
@@ -972,8 +973,9 @@ async function runPropertyBasedTests() {
           }
           
         } finally {
-          // Restore original setTimeout
+          // Restore original setTimeout and clearTimeout
           global.setTimeout = originalSetTimeout;
+          global.clearTimeout = originalClearTimeout;
         }
       }
     )

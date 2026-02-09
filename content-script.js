@@ -1678,14 +1678,6 @@
         return false;
       }
       
-      // Remove existing theme classes
-      renderedContent.classList.remove('theme-dark');
-      
-      // Apply new theme
-      if (theme === 'dark') {
-        renderedContent.classList.add('theme-dark');
-      }
-      
       console.log(`Slack Markdown Renderer: Syntax highlighting theme set to ${theme}`);
       return true;
     } catch (error) {
@@ -1733,7 +1725,7 @@
       });
       
       // Apply new theme
-      const themeClass = BACKGROUND_THEMES[theme.toUpperCase().replace('-', '_')] || BACKGROUND_THEMES.WHITE;
+      const themeClass = BACKGROUND_THEMES[theme.toUpperCase().replace(/-/g, '_')] || BACKGROUND_THEMES.WHITE;
       renderedContent.classList.add(themeClass);
       
       // Save theme preference
@@ -1772,7 +1764,7 @@
       // Check if sessionStorage is available (not available in Node.js test environment)
       if (typeof sessionStorage !== 'undefined') {
         const savedTheme = sessionStorage.getItem('slack-markdown-renderer-theme-preference');
-        if (savedTheme && Object.keys(BACKGROUND_THEMES).includes(savedTheme.toUpperCase().replace('-', '_'))) {
+        if (savedTheme && Object.keys(BACKGROUND_THEMES).includes(savedTheme.toUpperCase().replace(/-/g, '_'))) {
           console.log(`Slack Markdown Renderer: Theme preference loaded: ${savedTheme}`);
           return savedTheme;
         }
@@ -1873,7 +1865,7 @@
    * Initializes the extension with user preferences
    * @param {string} preferredView - The preferred initial view
    */
-  function initializeWithPreferences(preferredView = null) {
+  async function initializeWithPreferences(preferredView = null) {
     // Load session preference if no preference specified
     const initialView = preferredView || loadSessionPreference();
     
@@ -1881,11 +1873,9 @@
     
     // Set the initial view based on preference
     if (initialView === 'raw' && currentView === 'rendered') {
-      // Switch to RAW view if that's the preference
       switchToRawView();
     } else if (initialView === 'rendered' && currentView === 'raw') {
-      // Switch to rendered view if that's the preference
-      switchToRenderedView();
+      await switchToRenderedView();
     }
     
     // Update session preference
@@ -2089,11 +2079,11 @@
       // Step 9: Session Preference Management
       
       // Initialize with user preferences
-      safeExecute(
-        () => initializeWithPreferences(),
-        'Preferences initialization',
-        ERROR_CATEGORIES.VALIDATION
-      );
+      try {
+        await initializeWithPreferences();
+      } catch (e) {
+        logError(e, 'Preferences initialization', ERROR_CATEGORIES.VALIDATION, ERROR_SEVERITY.LOW);
+      }
       
       // Save current state as rendered
       safeExecute(

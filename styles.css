@@ -594,50 +594,6 @@
   text-align: right;
 }
 
-/* Dark theme for syntax highlighting */
-.slack-markdown-renderer-content.theme-dark pre[class*="language-"] {
-  background-color: #2d3748;
-  border-color: #4a5568;
-  color: #e2e8f0;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.comment,
-.slack-markdown-renderer-content.theme-dark .token.prolog,
-.slack-markdown-renderer-content.theme-dark .token.doctype,
-.slack-markdown-renderer-content.theme-dark .token.cdata {
-  color: #a0aec0;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.property,
-.slack-markdown-renderer-content.theme-dark .token.tag,
-.slack-markdown-renderer-content.theme-dark .token.boolean,
-.slack-markdown-renderer-content.theme-dark .token.number,
-.slack-markdown-renderer-content.theme-dark .token.constant,
-.slack-markdown-renderer-content.theme-dark .token.symbol,
-.slack-markdown-renderer-content.theme-dark .token.deleted {
-  color: #f56565;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.selector,
-.slack-markdown-renderer-content.theme-dark .token.attr-name,
-.slack-markdown-renderer-content.theme-dark .token.string,
-.slack-markdown-renderer-content.theme-dark .token.char,
-.slack-markdown-renderer-content.theme-dark .token.builtin,
-.slack-markdown-renderer-content.theme-dark .token.inserted {
-  color: #68d391;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.atrule,
-.slack-markdown-renderer-content.theme-dark .token.attr-value,
-.slack-markdown-renderer-content.theme-dark .token.keyword {
-  color: #9f7aea;
-}
-
-.slack-markdown-renderer-content.theme-dark .token.function,
-.slack-markdown-renderer-content.theme-dark .token.class-name {
-  color: #63b3ed;
-}
-
 /* Copy button for code blocks */
 .markdown-body pre[class*="language-"] .copy-button {
   position: absolute;
