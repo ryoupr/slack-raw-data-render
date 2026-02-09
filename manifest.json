@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Slack Markdown Renderer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Renders Markdown content in Slack RAW file pages",
   "permissions": ["storage"],
   "content_scripts": [
