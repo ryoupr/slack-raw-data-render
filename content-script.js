@@ -1019,46 +1019,6 @@
   }
 
   /**
-   * Updates the loading indicator progress and message
-   * @param {Object} progress - Progress information
-   * @param {string} progress.stage - Current processing stage
-   * @param {number} progress.progress - Progress value (0-1)
-   * @param {string} progress.message - Optional custom message
-   */
-  function updateLoadingIndicator(progress) {
-    if (!loadingIndicator) {
-      return;
-    }
-    
-    try {
-      const messageElement = loadingIndicator.querySelector('.loading-message');
-      const progressFill = loadingIndicator.querySelector('.progress-fill');
-      
-      // Update message based on stage
-      if (progress.message) {
-        messageElement.textContent = progress.message;
-      } else {
-        const stageMessages = {
-          'parsing': 'Parsing Markdown...',
-          'styling': 'Applying styles...',
-          'highlighting': 'Adding syntax highlighting...',
-          'complete': 'Complete!'
-        };
-        messageElement.textContent = stageMessages[progress.stage] || 'Processing...';
-      }
-      
-      // Update progress bar
-      if (typeof progress.progress === 'number') {
-        const percentage = Math.min(100, Math.max(0, progress.progress * 100));
-        progressFill.style.width = `${percentage}%`;
-      }
-      
-    } catch (error) {
-      logError(error, 'Loading indicator update', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
-    }
-  }
-
-  /**
    * Hides the loading indicator
    */
   function hideLoadingIndicator() {
@@ -1795,31 +1755,6 @@
   }
 
   /**
-   * Gets the current background theme
-   * @returns {string} The current theme name
-   */
-  function getCurrentBackgroundTheme() {
-    const container = currentContentContainer || findContentContainer();
-    if (!container) {
-      return 'white'; // default
-    }
-    
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    if (!renderedContent) {
-      return 'white'; // default
-    }
-    
-    // Check which theme class is applied
-    for (const [themeName, themeClass] of Object.entries(BACKGROUND_THEMES)) {
-      if (renderedContent.classList.contains(themeClass)) {
-        return themeName.toLowerCase().replace('_', '-');
-      }
-    }
-    
-    return 'white'; // default
-  }
-
-  /**
    * Saves theme preference to session storage
    * @param {string} theme - The theme to save
    */
@@ -1969,22 +1904,6 @@
     
     // Return default preference
     return sessionPreferences.defaultView;
-  }
-
-  /**
-   * Clears session preferences
-   */
-  function clearSessionPreference() {
-    try {
-      // Check if sessionStorage is available (not available in Node.js test environment)
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.removeItem('slack-markdown-renderer-view-preference');
-      }
-      sessionPreferences.defaultView = 'rendered'; // Reset to default
-      console.log('Slack Markdown Renderer: Session preference cleared');
-    } catch (error) {
-      console.warn('Slack Markdown Renderer: Could not clear session preference:', error);
-    }
   }
 
   /**
