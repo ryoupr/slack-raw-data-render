@@ -198,12 +198,12 @@
 }
 
 .markdown-body li {
-  margin-bottom: 2px;
+  margin-bottom: 0;
   line-height: 1.4;
 }
 
 .markdown-body li > p {
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .markdown-body li:last-child {
@@ -215,8 +215,8 @@
 .markdown-body ol ol,
 .markdown-body ul ol,
 .markdown-body ol ul {
-  margin-top: 2px;
-  margin-bottom: 2px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 /* Enhanced Code Block Styling */
