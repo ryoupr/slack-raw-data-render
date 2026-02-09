@@ -216,6 +216,10 @@
   line-height: 1.4;
 }
 
+.markdown-body li br {
+  display: none;
+}
+
 .markdown-body li:last-child {
   margin-bottom: 0;
 }

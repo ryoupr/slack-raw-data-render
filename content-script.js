@@ -737,7 +737,7 @@
     try {
       // Configure marked options for security and features
       marked.setOptions({
-        breaks: true,        // Convert line breaks to <br>
+        breaks: false,       // Don't convert line breaks to <br>
         gfm: true,          // Enable GitHub Flavored Markdown
         smartLists: true,   // Use smarter list behavior
         smartypants: false, // Don't use smart quotes
