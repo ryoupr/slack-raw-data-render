@@ -5,8 +5,6 @@
 
 const fc = require('fast-check');
 const { JSDOM } = require('jsdom');
-const fs = require('fs');
-const path = require('path');
 
 // Setup DOM environment
 function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file.md') {
