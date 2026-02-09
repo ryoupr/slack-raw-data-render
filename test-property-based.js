@@ -138,12 +138,11 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
       try {
         // Configure marked options for proper parsing
         marked.setOptions({
-          breaks: true,        // Convert line breaks to <br>
-          gfm: true,          // Enable GitHub Flavored Markdown
-          sanitize: false,    // We'll handle sanitization separately if needed
-          smartLists: true,   // Use smarter list behavior
-          smartypants: false, // Don't use smart quotes
-          xhtml: false        // Don't use XHTML-compliant tags
+          breaks: true,
+          gfm: true,
+          smartLists: true,
+          smartypants: false,
+          xhtml: false
         });
         
         return marked.parse(content);
@@ -159,16 +158,16 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
   // The IIFE-wrapped content-script.js cannot be safely loaded in Node.js.
 }
 
-function runPropertyBasedTests() {
+async function runPropertyBasedTests() {
   console.log('🔬 Running Property-Based Tests...\n');
   
   let passedTests = 0;
   let totalTests = 0;
   
-  function propertyTest(name, property, options = {}) {
+  async function propertyTest(name, property, options = {}) {
     totalTests++;
     try {
-      fc.assert(property, { numRuns: 20, ...options });
+      await fc.assert(property, { numRuns: 20, ...options });
       console.log(`✅ ${name}`);
       passedTests++;
     } catch (error) {
@@ -184,7 +183,7 @@ function runPropertyBasedTests() {
   
   // Property 1: URL Pattern Detection
   // Feature: slack-markdown-renderer, Property 1: URL Pattern Detection
-  propertyTest('Property 1: URL Pattern Detection', 
+  await propertyTest('Property 1: URL Pattern Detection', 
     fc.property(fc.webUrl(), (url) => {
       const shouldActivate = url.startsWith('https://files.slack.com/files-pri/');
       const actuallyActivates = detectSlackRawUrl(url);
@@ -194,7 +193,7 @@ function runPropertyBasedTests() {
   
   // Property 2: Content Analysis Consistency  
   // Feature: slack-markdown-renderer, Property 2: Content Analysis Consistency
-  propertyTest('Property 2: Content Analysis Consistency',
+  await propertyTest('Property 2: Content Analysis Consistency',
     fc.property(fc.string(), (content) => {
       const analysis1 = analyzeContentType(content);
       const analysis2 = analyzeContentType(content);
@@ -206,7 +205,7 @@ function runPropertyBasedTests() {
   
   // Property 3: Markdown Detection Accuracy
   // Feature: slack-markdown-renderer, Property 3: Markdown Detection Accuracy
-  propertyTest('Property 3: Markdown Detection Accuracy',
+  await propertyTest('Property 3: Markdown Detection Accuracy',
     fc.property(
       fc.oneof(
         // Headers (Requirement 1.4 - Markdown syntax patterns)
@@ -286,7 +285,7 @@ function runPropertyBasedTests() {
   
   // Property 4: Markdown Parsing Round Trip
   // Feature: slack-markdown-renderer, Property 4: Markdown Parsing Round Trip
-  propertyTest('Property 4: Markdown Parsing Round Trip',
+  await propertyTest('Property 4: Markdown Parsing Round Trip',
     fc.property(
       fc.oneof(
         fc.constant('# Header 1'),
@@ -403,7 +402,7 @@ function runPropertyBasedTests() {
   
   // Property 5: DOM Replacement Integrity
   // Feature: slack-markdown-renderer, Property 5: DOM Replacement Integrity
-  propertyTest('Property 5: DOM Replacement Integrity',
+  await propertyTest('Property 5: DOM Replacement Integrity',
     fc.property(
       fc.record({
         originalContent: fc.string({ minLength: 5, maxLength: 200 }).filter(content => {
@@ -525,7 +524,7 @@ function runPropertyBasedTests() {
   
   // Property 6: File Extension Recognition
   // Feature: slack-markdown-renderer, Property 6: File Extension Recognition
-  propertyTest('Property 6: File Extension Recognition',
+  await propertyTest('Property 6: File Extension Recognition',
     fc.property(
       fc.oneof(
         fc.constant('md'),
@@ -560,7 +559,7 @@ function runPropertyBasedTests() {
   
   // Property 7: Non-Markdown Content Preservation
   // Feature: slack-markdown-renderer, Property 7: Non-Markdown Content Preservation
-  propertyTest('Property 7: Non-Markdown Content Preservation',
+  await propertyTest('Property 7: Non-Markdown Content Preservation',
     fc.property(
       fc.string().filter(s => {
         // Generate strings that don't contain markdown patterns
@@ -579,7 +578,7 @@ function runPropertyBasedTests() {
   
   // Property 8: Toggle State Consistency
   // Feature: slack-markdown-renderer, Property 8: Toggle State Consistency
-  propertyTest('Property 8: Toggle State Consistency',
+  await propertyTest('Property 8: Toggle State Consistency',
     fc.property(
       fc.record({
         initialView: fc.constantFrom('raw', 'rendered'),
@@ -757,7 +756,7 @@ function runPropertyBasedTests() {
   
   // Property 9: Session Preference Persistence
   // Feature: slack-markdown-renderer, Property 9: Session Preference Persistence
-  propertyTest('Property 9: Session Preference Persistence',
+  await propertyTest('Property 9: Session Preference Persistence',
     fc.property(
       fc.record({
         viewMode: fc.constantFrom('raw', 'rendered'),
@@ -880,8 +879,8 @@ function runPropertyBasedTests() {
   
   // Property 10: Error Isolation
   // Feature: slack-markdown-renderer, Property 10: Error Isolation
-  propertyTest('Property 10: Error Isolation',
-    fc.property(
+  await propertyTest('Property 10: Error Isolation',
+    fc.asyncProperty(
       fc.oneof(
         fc.constant(null),
         fc.constant(undefined),
@@ -889,9 +888,8 @@ function runPropertyBasedTests() {
         fc.constant({}),
         fc.constant([])
       ),
-      (invalidInput) => {
-        const result = processMarkdownContent(invalidInput);
-        // Errors should be isolated and return a failure result
+      async (invalidInput) => {
+        const result = await processMarkdownContent(invalidInput);
         return !result.success && typeof result.error === 'string';
       }
     )
@@ -899,48 +897,18 @@ function runPropertyBasedTests() {
   
   // Property 11: Non-Blocking Processing
   // Feature: slack-markdown-renderer, Property 11: Non-Blocking Processing
-  propertyTest('Property 11: Non-Blocking Processing',
-    fc.property(fc.string({ maxLength: 10000 }), (content) => {
-      // Test that processing doesn't block the main thread
-      let mainThreadBlocked = false;
-      let processingCompleted = false;
-      
-      // Set up a timer to check if main thread remains responsive
-      const checkResponsiveness = () => {
-        // If this callback doesn't execute quickly, main thread is blocked
-        const checkStart = Date.now();
-        setTimeout(() => {
-          const checkEnd = Date.now();
-          // If the setTimeout callback is delayed significantly, thread was blocked
-          if (checkEnd - checkStart > 50) { // 50ms tolerance
-            mainThreadBlocked = true;
-          }
-        }, 0);
-      };
-      
-      // Start responsiveness check
-      checkResponsiveness();
-      
-      // Process the content
+  await propertyTest('Property 11: Non-Blocking Processing',
+    fc.asyncProperty(fc.string({ maxLength: 10000 }), async (content) => {
       const startTime = Date.now();
-      const result = processMarkdownContent(content);
-      const endTime = Date.now();
-      
-      processingCompleted = result && typeof result === 'object';
-      
-      // Processing should complete quickly and not block main thread
-      const processingTime = endTime - startTime;
-      const isNonBlocking = processingTime < 100; // 100ms max for non-blocking
-      const threadResponsive = !mainThreadBlocked;
-      
-      // Property: Processing should be non-blocking (fast) and maintain thread responsiveness
-      return isNonBlocking && threadResponsive && processingCompleted;
+      const result = await processMarkdownContent(content);
+      const processingTime = Date.now() - startTime;
+      return processingTime < 100 && result && typeof result === 'object';
     })
   );
   
   // Property 12: Loading State Management
   // Feature: slack-markdown-renderer, Property 12: Loading State Management
-  propertyTest('Property 12: Loading State Management',
+  await propertyTest('Property 12: Loading State Management',
     fc.property(
       fc.record({
         operationDuration: fc.integer({ min: 0, max: 1000 }), // 0-1 seconds
@@ -1025,7 +993,7 @@ function runPropertyBasedTests() {
 
 // Run the tests
 if (require.main === module) {
-  runPropertyBasedTests();
+  runPropertyBasedTests().then(() => {});
 }
 
 module.exports = { runPropertyBasedTests };

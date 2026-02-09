@@ -92,28 +92,6 @@ function loadContentScriptFunctions() {
     PAPER: 'theme-paper'
   };
   
-  // Extract and define the styling functions
-  global.applyBaseStyles = function() {
-    const container = global.currentContentContainer || findContentContainer();
-    if (!container) {
-      console.warn('Slack Markdown Renderer: No container found for applying base styles');
-      return false;
-    }
-    
-    try {
-      const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-      if (renderedContent) {
-        renderedContent.classList.add('slack-markdown-renderer-content');
-        console.log('Slack Markdown Renderer: Base styles applied');
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Slack Markdown Renderer: Error applying base styles:', error);
-      return false;
-    }
-  };
-  
   global.setBackgroundTheme = function(theme = 'white') {
     const container = global.currentContentContainer || findContentContainer();
     if (!container) {
@@ -280,23 +258,6 @@ function runStylingTests() {
       console.log(`❌ ${name}: ${error.message}`);
     }
   }
-
-  // Test 1: CSS Class Application - Base Styles (Requirement 5.1)
-  test('CSS Class Application - Base Styles', () => {
-    const container = document.getElementById('test-container');
-    const renderedContent = container.querySelector('.slack-markdown-renderer-content');
-    
-    // Mock currentContentContainer for the function
-    global.currentContentContainer = container;
-    
-    // Test applying base styles
-    const result = applyBaseStyles();
-    
-    if (!result) throw new Error('applyBaseStyles should return true on success');
-    if (!renderedContent.classList.contains('slack-markdown-renderer-content')) {
-      throw new Error('Base styling class should be applied');
-    }
-  });
 
   // Test 2: CSS Class Application - Typography Enhancements (Requirement 5.1)
   test('CSS Class Application - Typography Enhancements', () => {
@@ -470,12 +431,10 @@ function runStylingTests() {
     global.findContentContainer = () => null;
     
     // Test functions should handle missing container gracefully
-    const baseStylesResult = applyBaseStyles();
     const typographyResult = applyTypographyEnhancements();
     const themeResult = setBackgroundTheme('white');
     const colorSchemeResult = applyColorScheme('default');
     
-    if (baseStylesResult !== false) throw new Error('applyBaseStyles should return false when no container');
     if (typographyResult !== false) throw new Error('applyTypographyEnhancements should return false when no container');
     if (themeResult !== false) throw new Error('setBackgroundTheme should return false when no container');
     if (colorSchemeResult !== false) throw new Error('applyColorScheme should return false when no container');

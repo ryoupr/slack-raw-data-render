@@ -642,7 +642,7 @@
 .markdown-body pre[class*="language-"] .copy-button {
   position: absolute;
   top: 8px;
-  right: 8px;
+  right: 60px;
   background-color: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 4px;

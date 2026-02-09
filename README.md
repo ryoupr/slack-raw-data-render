@@ -46,6 +46,7 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 ├── test-styling.js            # スタイリングテスト
 ├── run-all-tests.js           # テストランナー
 ├── build-chrome-extension.sh  # Chrome Web Store用ビルド
+├── PRIVACY.md                 # プライバシーポリシー
 ├── generate-icons.sh          # アイコン生成（macOS）
 └── resize-to-1280x800.sh     # スクリーンショットリサイズ
 ```

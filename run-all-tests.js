@@ -6,7 +6,7 @@
 const { runPropertyBasedTests } = require('./test-property-based');
 const { runStylingTests } = require('./test-styling');
 
-function runAllTests() {
+async function runAllTests() {
   console.log('🚀 Running Complete Test Suite for Slack Markdown Renderer\n');
   console.log('='.repeat(60));
   
@@ -15,7 +15,7 @@ function runAllTests() {
   // Run property-based tests
   console.log('\n1️⃣ PROPERTY-BASED TESTS');
   console.log('-'.repeat(30));
-  const propertyTestsPassed = runPropertyBasedTests();
+  const propertyTestsPassed = await runPropertyBasedTests();
   if (!propertyTestsPassed) allTestsPassed = false;
   
   // Run styling tests
@@ -43,8 +43,7 @@ function runAllTests() {
 
 // Run all tests
 if (require.main === module) {
-  const success = runAllTests();
-  process.exit(success ? 0 : 1);
+  runAllTests().then(success => process.exit(success ? 0 : 1));
 }
 
 module.exports = { runAllTests };

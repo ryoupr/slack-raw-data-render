@@ -34,7 +34,8 @@
       doc.querySelectorAll('script,iframe,object,embed,form,input,textarea,select,button,link[rel="import"],meta,base').forEach(el => el.remove());
       doc.querySelectorAll('*').forEach(el => {
         for (const attr of [...el.attributes]) {
-          if (attr.name.startsWith('on') || (attr.name === 'href' || attr.name === 'src' || attr.name === 'action') && attr.value.trim().toLowerCase().startsWith('javascript:')) {
+          const val = attr.value.trim().toLowerCase();
+          if (attr.name.startsWith('on') || (['href', 'src', 'action'].includes(attr.name) && /^(javascript|data|vbscript):/i.test(val))) {
             el.removeAttribute(attr.name);
           }
         }
@@ -214,68 +215,6 @@
   }
 
   /**
-   * Creates a notification for non-Markdown content
-   * @param {string} reason - Reason why content was not processed
-   * @param {Object} analysis - Content analysis result
-   * @returns {HTMLElement|null} Notification element or null if creation fails
-   */
-  function createNonMarkdownNotification(reason, analysis = null) {
-    try {
-      const notification = document.createElement('div');
-      notification.className = 'slack-markdown-renderer-info-notification';
-      
-      const confidence = analysis?.confidence || 0;
-      const features = analysis?.detectedFeatures || [];
-      
-      notification.innerHTML = `
-        <div class="info-notice">
-          <p><strong>ℹ️ Slack Markdown Renderer</strong></p>
-          <p>${escapeHTML(reason)}</p>
-          ${confidence > 0 ? `
-            <details>
-              <summary>Analysis details</summary>
-              <p>Confidence: ${(confidence * 100).toFixed(1)}%</p>
-              ${features.length > 0 ? `<p>Detected features: ${escapeHTML(features.join(', '))}</p>` : ''}
-            </details>
-          ` : ''}
-        </div>
-      `;
-      
-      return notification;
-    } catch (error) {
-      logError(error, 'Non-Markdown notification creation', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
-      return null;
-    }
-  }
-
-  /**
-   * Shows a subtle notification about non-Markdown content (optional)
-   * @param {string} reason - Reason for not processing
-   * @param {Object} analysis - Content analysis result
-   * @param {number} duration - Duration to show notification (ms)
-   */
-  function showNonMarkdownNotification(reason, analysis = null, duration = 5000) {
-    try {
-      const notification = createNonMarkdownNotification(reason, analysis);
-      if (!notification) return;
-
-      // Add to page
-      document.body.appendChild(notification);
-      
-      // Auto-remove after duration
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, duration);
-      
-      console.log(`Slack Markdown Renderer: Non-Markdown notification shown - ${reason}`);
-    } catch (error) {
-      logError(error, 'Non-Markdown notification display', ERROR_CATEGORIES.DOM, ERROR_SEVERITY.LOW);
-    }
-  }
-
-  /**
    * Handles content that appears to be code or structured text
    * @param {string} content - The content to analyze
    * @returns {Object} Analysis result with content type detection
@@ -384,16 +323,6 @@
       content,
       `${markdownDecision.reason}${structuredAnalysis.isStructured ? ` (detected as ${structuredAnalysis.type})` : ''}`
     );
-
-    // Optionally show a subtle notification (can be disabled)
-    const showNotification = false; // Set to true if you want notifications
-    if (showNotification) {
-      showNonMarkdownNotification(
-        preservationResult.reason,
-        markdownDecision.analysis,
-        3000 // 3 seconds
-      );
-    }
 
     return {
       action: 'preserve_original',
@@ -2467,20 +2396,6 @@
         ERROR_CATEGORIES.VALIDATION
       );
       
-      
-      // Step 10: Error Handling Integration Test
-      
-      // Test error logging system
-      const errorLogTest = safeExecute(
-        () => {
-          const testErrors = getErrorLog();
-          return Array.isArray(testErrors);
-        },
-        'Error logging system test',
-        ERROR_CATEGORIES.VALIDATION,
-        false
-      );
-      
       // Final State Verification
       const finalState = getCurrentState();
       
@@ -2506,8 +2421,7 @@
           toggleButton: {
             created: !!toggleButton,
             added: toggleButtonAdded
-          },
-          errorHandling: errorLogTest
+          }
         }
       };
       

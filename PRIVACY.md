@@ -1,6 +1,6 @@
 # Privacy Policy for Slack Markdown Renderer
 
-**Last updated: December 25, 2025**
+**Last updated: February 10, 2026**
 
 ## Overview
 
