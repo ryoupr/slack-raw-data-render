@@ -35,7 +35,7 @@
       doc.querySelectorAll('*').forEach(el => {
         for (const attr of [...el.attributes]) {
           const val = attr.value.trim().toLowerCase();
-          if (attr.name.startsWith('on') || (['href', 'src', 'action'].includes(attr.name) && /^(javascript|data|vbscript):/i.test(val))) {
+          if (attr.name.startsWith('on') || (['href', 'src', 'action'].includes(attr.name) && /^(javascript|data|vbscript):/.test(val))) {
             el.removeAttribute(attr.name);
           }
         }
@@ -2220,18 +2220,6 @@
         };
       }
       
-      const currentUrl = window.location.href;
-      const urlValidation = validateUrl(currentUrl);
-      if (!urlValidation) {
-        console.warn('Slack Markdown Renderer: URL validation failed');
-        return {
-          success: false,
-          reason: 'URL validation failed',
-          step: 'url_validation',
-          url: currentUrl
-        };
-      }
-      
       
       // Step 2: Content Extraction and Analysis
       const content = safeExecute(
@@ -2273,8 +2261,7 @@
       
       
       // Step 4: Markdown Parsing and HTML Generation
-      const processingResult = await processMarkdownContent(content, (progress) => {
-      });
+      const processingResult = await processMarkdownContent(content, null);
       
       if (!processingResult.success && !processingResult.fallbackUsed) {
         console.error('Slack Markdown Renderer: Markdown processing failed completely');
@@ -2341,8 +2328,7 @@
       let syntaxHighlightingApplied = false;
       
       if (container) {
-        syntaxHighlightingApplied = await applySyntaxHighlighting(container, (progress) => {
-        });
+        syntaxHighlightingApplied = await applySyntaxHighlighting(container, null);
         
         // Set syntax highlighting theme
         safeExecute(
@@ -2450,11 +2436,7 @@
    * This is the main entry point that connects all components
    */
   async function initializeExtension() {
-    console.log('Slack Markdown Renderer: Initializing extension with complete workflow integration');
-    console.log('Extension version: 1.0.0');
-    console.log('Page URL:', window.location.href);
-    console.log('User Agent:', navigator.userAgent);
-    console.log('Timestamp:', new Date().toISOString());
+    console.log('Slack Markdown Renderer: Initializing extension');
     
     try {
       // Execute the complete integrated workflow

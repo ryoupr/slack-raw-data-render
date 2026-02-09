@@ -65,13 +65,6 @@ function setupTestEnvironment() {
 
 // Load content script functions
 function loadContentScriptFunctions() {
-  const contentScriptPath = path.join(__dirname, 'content-script.js');
-  if (!fs.existsSync(contentScriptPath)) {
-    throw new Error('Content script not found');
-  }
-
-  const contentScript = fs.readFileSync(contentScriptPath, 'utf8');
-  
   // Define the functions we need for testing directly
   // This avoids parsing issues with the complex content script
   
