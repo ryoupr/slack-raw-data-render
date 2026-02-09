@@ -61,13 +61,13 @@ pre.slack-markdown-rendered {
 .toc-h6 { padding-left: 60px; }
 
 /* Shift main content when TOC is present */
-.slack-markdown-renderer-content {
-  margin-left: 220px;
+pre.slack-markdown-rendered {
+  margin-left: 220px !important;
 }
 
 @media (max-width: 768px) {
   .slack-markdown-toc { display: none; }
-  .slack-markdown-renderer-content { margin-left: 0; }
+  pre.slack-markdown-rendered { margin-left: 0 !important; }
 }
 
 /* Toggle Button Styles */
