@@ -12,6 +12,17 @@ Chrome拡張機能として、SlackのRAWファイルページでMarkdownコン�
 - テーマ切り替え（white / light-gray / warm-white / paper）
 - ポップアップでの行間調整
 - アクセシビリティ対応（高コントラスト、モーション軽減、キーボード操作）
+- 多言語対応（ブラウザの表示言語に合わせて UI 文言を切り替え）
+
+## 対応言語
+
+英語（デフォルト）、日本語、スペイン語、ポルトガル語（ブラジル）、ロシア語、中国語（簡体字）、アラビア語、ヒンディー語、ベンガル語の9言語。ブラウザの表示言語に対応する翻訳が無い場合は英語で表示されます。
+
+UI 文言は `public/_locales/<locale>/messages.json`（[chrome.i18n](https://developer.chrome.com/docs/extensions/reference/api/i18n)）で管理しています。
+
+- 文言を追加・変更するときは、全言語の `messages.json` に同じキーを追加する
+- 言語を追加するときは、`public/_locales/` に `en/messages.json` を複製したディレクトリ（例: `fr`、`zh_TW`）を作り、`message` を翻訳する
+- `extDescription` は Chrome の制限で132文字以内にする
 
 ## 技術仕様
 
@@ -51,7 +62,7 @@ npm install   # postinstall で wxt prepare も実行される
 
 ```
 .
-├── wxt.config.ts                # WXT設定（manifest の name / permissions）
+├── wxt.config.ts                # WXT設定（manifest の name / description / default_locale / permissions）
 ├── package.json                 # 名前・バージョン・説明・npmスクリプト
 ├── tsconfig.json
 ├── entrypoints/
@@ -61,7 +72,9 @@ npm install   # postinstall で wxt prepare も実行される
 │   └── popup/
 │       ├── index.html           # ポップアップ（行間調整）
 │       └── main.js
-├── public/icon/                 # 拡張機能アイコン（WXT が自動検出）
+├── public/
+│   ├── _locales/<locale>/messages.json  # UI 文言（9言語）
+│   └── icon/                    # 拡張機能アイコン（WXT が自動検出）
 ├── assets/icon-source.png       # アイコンの元画像
 ├── screenshot/                  # ストア用スクリーンショット
 ├── script/

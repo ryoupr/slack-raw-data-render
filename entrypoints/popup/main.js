@@ -1,3 +1,15 @@
+// i18n: ブラウザの表示言語の messages.json から取得（該当なし → default_locale の en）
+const t = (key) => browser.i18n.getMessage(key) || key;
+
+const uiLang = browser.i18n.getUILanguage?.() ?? 'en';
+document.documentElement.lang = uiLang;
+// アラビア語などの RTL 言語ではポップアップ全体を右→左レイアウトにする
+document.documentElement.dir = t('@@bidi_dir') === 'rtl' ? 'rtl' : 'ltr';
+
+document.querySelectorAll('[data-i18n]').forEach((el) => {
+  el.textContent = t(el.dataset.i18n);
+});
+
 const slider = document.getElementById('line-height');
 const display = document.getElementById('lh-value');
 
