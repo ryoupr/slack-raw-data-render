@@ -3,9 +3,16 @@
  * Automatically renders Markdown content in Slack RAW file pages
  */
 
-(function() {
-  'use strict';
+import { marked } from 'marked';
+import Prism from 'prismjs';
+// manifest 時代と同じく prism のテーマ → 拡張機能のスタイルの順に読み込む
+import 'prismjs/themes/prism.css';
+import './style.css';
 
+export default defineContentScript({
+  matches: ['https://files.slack.com/files-pri/*'],
+  runAt: 'document_idle',
+  main() {
   // Extension initialization
   console.log('Slack Markdown Renderer: Content script loaded');
 
@@ -2275,5 +2282,5 @@
       }
     });
   }
-  
-})();
+  },
+});

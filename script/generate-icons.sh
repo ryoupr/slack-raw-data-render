@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Chrome拡張機能用アイコン生成ツール
-# PNGファイルを16x16、48x48、128x128サイズに変換
+# PNGファイルを16/32/48/128pxに変換し、WXTが自動検出する public/icon/ に出力
 
 set -e
 
@@ -31,15 +31,13 @@ show_usage() {
     echo
     echo "例:"
     echo "  $0 source-icon.png"
-    echo "  $0 icons/icon.png"
+    echo "  $0 ~/Downloads/icon.png"
     echo
     echo "出力:"
-    echo "  icons/icon16.png  (16x16px)  - 拡張機能のファビコン"
-    echo "  icons/icon19.png  (19x19px)  - ツールバーアイコン（旧版対応）"
-    echo "  icons/icon32.png  (32x32px)  - Windows等での表示"
-    echo "  icons/icon38.png  (38x38px)  - ツールバーアイコン（高解像度）"
-    echo "  icons/icon48.png  (48x48px)  - 拡張機能管理ページ"
-    echo "  icons/icon128.png (128x128px) - Chrome Web Store表示"
+    echo "  public/icon/16.png  (16x16px)   - ファビコン・ツールバー"
+    echo "  public/icon/32.png  (32x32px)   - Windows等での表示"
+    echo "  public/icon/48.png  (48x48px)   - 拡張機能管理ページ"
+    echo "  public/icon/128.png (128x128px) - Chrome Web Store表示"
     echo
     echo "注意:"
     echo "  - macOS標準のsipsコマンドを使用します"
@@ -73,10 +71,11 @@ if ! command -v sips &> /dev/null; then
     exit 1
 fi
 
-# iconsディレクトリの作成
-if [ ! -d "icons" ]; then
-    print_info "iconsディレクトリを作成中..."
-    mkdir icons
+# 出力ディレクトリの作成
+ICON_DIR="public/icon"
+if [ ! -d "$ICON_DIR" ]; then
+    print_info "$ICON_DIR ディレクトリを作成中..."
+    mkdir -p "$ICON_DIR"
 fi
 
 print_info "入力ファイル: $INPUT_FILE"
@@ -103,13 +102,13 @@ else
 fi
 
 # 生成するサイズの定義
-declare -a SIZES=("16" "19" "32" "38" "48" "128")
+declare -a SIZES=("16" "32" "48" "128")
 
 print_info "アイコンを生成中..."
 
 # 各サイズのアイコンを生成
 for SIZE in "${SIZES[@]}"; do
-    OUTPUT_FILE="icons/icon${SIZE}.png"
+    OUTPUT_FILE="$ICON_DIR/${SIZE}.png"
     
     # 既存ファイルの確認
     if [ -f "$OUTPUT_FILE" ]; then
@@ -131,7 +130,7 @@ print_info "生成されたファイル:"
 
 # 生成されたファイルの情報を表示
 for SIZE in "${SIZES[@]}"; do
-    OUTPUT_FILE="icons/icon${SIZE}.png"
+    OUTPUT_FILE="$ICON_DIR/${SIZE}.png"
     if [ -f "$OUTPUT_FILE" ]; then
         FILE_SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
         print_info "  $OUTPUT_FILE (${FILE_SIZE})"
@@ -139,17 +138,4 @@ for SIZE in "${SIZES[@]}"; do
 done
 
 echo
-print_info "これらのファイルはmanifest.jsonで参照できます："
-print_info '  "icons": {'
-print_info '    "16": "icons/icon16.png",'
-print_info '    "19": "icons/icon19.png",'
-print_info '    "32": "icons/icon32.png",'
-print_info '    "38": "icons/icon38.png",'
-print_info '    "48": "icons/icon48.png",'
-print_info '    "128": "icons/icon128.png"'
-print_info '  }'
-echo
-print_info "推奨設定（より良い表示のため）："
-print_info "- 16, 48, 128は必須サイズ"
-print_info "- 19, 38はツールバーアイコン用"
-print_info "- 32はWindows等での表示用"
+print_info "WXTがビルド時に自動検出し、manifest.jsonのiconsに設定します。"
