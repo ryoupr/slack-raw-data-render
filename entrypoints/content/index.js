@@ -17,6 +17,17 @@ export default defineContentScript({
   console.log('Slack Markdown Renderer: Content script loaded');
 
   /**
+   * i18n: ブラウザの表示言語の public/_locales/<locale>/messages.json から文言を取得する。
+   * 該当言語が無ければ default_locale（en）、キー自体が無ければキー名を返す。
+   * ref: https://developer.chrome.com/docs/extensions/reference/api/i18n
+   * @param {string} key - messages.json のキー
+   * @returns {string} 翻訳済みの文言
+   */
+  function t(key) {
+    return browser.i18n.getMessage(key) || key;
+  }
+
+  /**
    * Escapes HTML special characters to prevent XSS
    * @param {string} str - The string to escape
    * @returns {string} The escaped string
@@ -555,15 +566,15 @@ export default defineContentScript({
     const fallbackHTML = `
       <div class="slack-markdown-renderer-content error-fallback">
         <div class="error-notice">
-          <p><strong>⚠️ Markdown parsing failed</strong></p>
-          <p>Displaying original content instead.</p>
+          <p><strong>${escapeHTML(t('parseFailedTitle'))}</strong></p>
+          <p>${escapeHTML(t('parseFailedBody'))}</p>
           <details>
-            <summary>Error details</summary>
+            <summary>${escapeHTML(t('errorDetails'))}</summary>
             <pre>${escapeHTML(error.message)}</pre>
           </details>
         </div>
         <div class="original-content">
-          <pre>${escapeHTML(content || 'No content available')}</pre>
+          <pre>${escapeHTML(content || t('noContent'))}</pre>
         </div>
       </div>
     `;
@@ -598,10 +609,10 @@ export default defineContentScript({
       const inner = document.createElement('div');
       inner.style.cssText = 'background:#fff3cd;border:1px solid #ffeaa7;color:#856404;padding:10px;margin:10px 0;border-radius:4px';
       const strong = document.createElement('strong');
-      strong.textContent = '⚠️ Slack Markdown Renderer Error';
+      strong.textContent = t('errorTitle');
       inner.appendChild(strong);
       inner.appendChild(document.createElement('br'));
-      inner.appendChild(document.createTextNode('Could not modify page content. The extension may not work properly on this page.'));
+      inner.appendChild(document.createTextNode(t('errorDomBody')));
       notification.appendChild(inner);
       
       // Try to add notification to body
@@ -975,7 +986,7 @@ export default defineContentScript({
    * @param {string} message - Loading message to display
    * @returns {HTMLElement} The loading indicator element
    */
-  function createLoadingIndicator(message = 'Processing Markdown...') {
+  function createLoadingIndicator(message = t('loadingProcessing')) {
     const indicator = document.createElement('div');
     indicator.className = 'slack-markdown-loading-indicator';
     indicator.innerHTML = `
@@ -999,7 +1010,7 @@ export default defineContentScript({
    * @param {number} timeout - Auto-hide timeout in milliseconds (0 = no timeout)
    * @returns {HTMLElement} The loading indicator element
    */
-  function showLoadingIndicator(message = 'Processing Markdown...', timeout = 10000) {
+  function showLoadingIndicator(message = t('loadingProcessing'), timeout = 10000) {
     // Remove existing indicator if present
     hideLoadingIndicator();
     
@@ -1271,9 +1282,9 @@ export default defineContentScript({
     // Create the button element
     const button = document.createElement('button');
     button.className = 'slack-markdown-toggle-button rendered-mode';
-    button.textContent = 'Show RAW';
-    button.title = 'Toggle between RAW text and rendered Markdown';
-    button.setAttribute('aria-label', 'Toggle between RAW text and rendered Markdown view');
+    button.textContent = t('toggleShowRaw');
+    button.title = t('toggleToRawTitle');
+    button.setAttribute('aria-label', t('toggleToRawTitle'));
     button.setAttribute('role', 'button');
     button.setAttribute('tabindex', '0');
     
@@ -1308,14 +1319,14 @@ export default defineContentScript({
     // Update button class and text based on mode
     if (mode === 'raw') {
       toggleButton.className = 'slack-markdown-toggle-button raw-mode';
-      toggleButton.textContent = 'Show Rendered';
-      toggleButton.title = 'Switch to rendered Markdown view';
-      toggleButton.setAttribute('aria-label', 'Switch to rendered Markdown view');
+      toggleButton.textContent = t('toggleShowRendered');
+      toggleButton.title = t('toggleToRenderedTitle');
+      toggleButton.setAttribute('aria-label', t('toggleToRenderedTitle'));
     } else {
       toggleButton.className = 'slack-markdown-toggle-button rendered-mode';
-      toggleButton.textContent = 'Show RAW';
-      toggleButton.title = 'Switch to RAW text view';
-      toggleButton.setAttribute('aria-label', 'Switch to RAW text view');
+      toggleButton.textContent = t('toggleShowRaw');
+      toggleButton.title = t('toggleToRawTitle');
+      toggleButton.setAttribute('aria-label', t('toggleToRawTitle'));
     }
     
     currentView = mode;
@@ -1385,7 +1396,7 @@ export default defineContentScript({
       const shouldShowLoading = processedMarkdownHTML.length > 50000;
       
       if (shouldShowLoading) {
-        showLoadingIndicator('Switching to rendered view...', 5000);
+        showLoadingIndicator(t('loadingSwitching'), 5000);
       }
       
       const success = replaceContentWithHTML(processedMarkdownHTML);
@@ -1621,9 +1632,9 @@ export default defineContentScript({
       // Create copy button
       const copyButton = document.createElement('button');
       copyButton.className = 'copy-button';
-      copyButton.textContent = 'Copy';
-      copyButton.title = 'Copy code to clipboard';
-      copyButton.setAttribute('aria-label', 'Copy code to clipboard');
+      copyButton.textContent = t('copy');
+      copyButton.title = t('copyTitle');
+      copyButton.setAttribute('aria-label', t('copyTitle'));
       
       // Add click handler
       copyButton.addEventListener('click', async (event) => {
@@ -1634,12 +1645,12 @@ export default defineContentScript({
           await navigator.clipboard.writeText(codeText);
           
           // Show feedback
-          copyButton.textContent = 'Copied!';
+          copyButton.textContent = t('copied');
           copyButton.classList.add('copied');
           
           // Reset after 2 seconds
           setTimeout(() => {
-            copyButton.textContent = 'Copy';
+            copyButton.textContent = t('copy');
             copyButton.classList.remove('copied');
           }, 2000);
           
@@ -1656,9 +1667,9 @@ export default defineContentScript({
             selection.addRange(range);
           }
           
-          copyButton.textContent = 'Selected';
+          copyButton.textContent = t('selected');
           setTimeout(() => {
-            copyButton.textContent = 'Copy';
+            copyButton.textContent = t('copy');
           }, 2000);
         }
       });
@@ -1936,14 +1947,14 @@ export default defineContentScript({
 
     const toc = document.createElement('nav');
     toc.className = 'slack-markdown-toc';
-    toc.innerHTML = `<div class="toc-title">目次</div>${tocItems}`;
+    toc.innerHTML = `<div class="toc-title">${escapeHTML(t('tocTitle'))}</div>${tocItems}`;
     document.body.appendChild(toc);
 
     // Toggle button
     const tocBtn = document.createElement('button');
     tocBtn.className = 'slack-markdown-toc-toggle';
     tocBtn.textContent = '☰';
-    tocBtn.title = '目次の表示/非表示';
+    tocBtn.title = t('tocToggleTitle');
     document.body.appendChild(tocBtn);
 
     tocBtn.addEventListener('click', () => {
@@ -2240,10 +2251,10 @@ export default defineContentScript({
         const inner = document.createElement('div');
         inner.style.cssText = 'background:#f8d7da;border:1px solid #f5c6cb;color:#721c24;padding:12px;margin:10px 0;border-radius:6px;font-family:-apple-system,BlinkMacSystemFont,sans-serif;font-size:14px';
         const strong = document.createElement('strong');
-        strong.textContent = '⚠️ Slack Markdown Renderer Error';
+        strong.textContent = t('errorTitle');
         inner.appendChild(strong);
         inner.appendChild(document.createElement('br'));
-        inner.appendChild(document.createTextNode('The extension encountered an error during initialization. Please refresh the page to try again.'));
+        inner.appendChild(document.createTextNode(t('errorInitBody')));
         errorNotification.appendChild(inner);
         
         if (document.body) {
