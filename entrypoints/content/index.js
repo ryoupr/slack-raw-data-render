@@ -5,6 +5,7 @@
 
 import { marked } from 'marked';
 import Prism from 'prismjs';
+import DOMPurify from 'dompurify';
 // manifest 時代と同じく prism のテーマ → 拡張機能のスタイルの順に読み込む
 import 'prismjs/themes/prism.css';
 import './style.css';
@@ -39,26 +40,26 @@ export default defineContentScript({
     return div.innerHTML;
   }
 
+  const SANITIZE_CONFIG = {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ['style', 'form', 'input', 'textarea', 'select', 'button'],
+    FORBID_ATTR: ['style'],
+  };
+
   /**
-   * Sanitizes HTML output from Markdown parser to prevent XSS
-   * Removes dangerous elements and event handler attributes
+   * Markdown パーサーの出力を DOMPurify でサニタイズする（XSS 対策）。
+   * Markdown は他のユーザーがアップロードしたファイルなので、信頼できない入力として扱う。
+   * - スクリプト・イベントハンドラ・危険な URL スキームは DOMPurify の既定で除去される
+   * - 加えて、ページを書き換えられる style 要素・style 属性と、
+   *   従来の自前サニタイザーで消していたフォーム系の要素を禁止する
+   * ref: https://github.com/cure53/DOMPurify#can-i-configure-dompurify
    * @param {string} html - The HTML to sanitize
    * @returns {string} Sanitized HTML
    */
   function sanitizeHTML(html) {
     if (typeof html !== 'string') return '';
     try {
-      const doc = new DOMParser().parseFromString(html, 'text/html');
-      doc.querySelectorAll('script,iframe,object,embed,form,input,textarea,select,button,link[rel="import"],meta,base').forEach(el => el.remove());
-      doc.querySelectorAll('*').forEach(el => {
-        for (const attr of [...el.attributes]) {
-          const val = attr.value.trim().toLowerCase();
-          if (attr.name.startsWith('on') || (['href', 'src', 'action'].includes(attr.name) && /^(javascript|data|vbscript):/.test(val))) {
-            el.removeAttribute(attr.name);
-          }
-        }
-      });
-      return doc.body.innerHTML;
+      return DOMPurify.sanitize(html, SANITIZE_CONFIG);
     } catch (e) {
       return escapeHTML(html);
     }
@@ -872,17 +873,18 @@ export default defineContentScript({
       throw new Error('HTML content must be a string');
     }
     
-    const cleanHTML = sanitizeHTML(htmlContent);
     // Convert loose lists (li containing p) to tight lists for compact rendering
-    const tightHTML = cleanHTML
+    const tightHTML = htmlContent
       .replace(/<li>\s*<p>/g, '<li>').replace(/<\/p>\s*<\/li>/g, '</li>')
       .replace(/<p>\s*<\/p>/g, '')           // Remove empty paragraphs
       .replace(/<p>\s*<br\s*\/?>\s*<\/p>/g, '') // Remove paragraphs containing only br
       .replace(/(<br\s*\/?>){2,}/g, '<br>'); // Collapse consecutive br tags
+    // 文字列置換で HTML の構造が変わりうるため、サニタイズは最後（DOM に入れる直前）に行う
+    const cleanHTML = sanitizeHTML(tightHTML);
     return `
       <div class="slack-markdown-renderer-content">
         <div class="markdown-body">
-          ${tightHTML}
+          ${cleanHTML}
         </div>
       </div>
     `;

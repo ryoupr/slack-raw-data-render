@@ -44,6 +44,7 @@ Slack Markdown Renderer is a Chrome extension that renders Markdown content in S
 This extension uses the following open-source libraries, all included in the extension package:
 - **Marked.js**: For Markdown parsing (no data transmission)
 - **Prism.js**: For syntax highlighting (no data transmission)
+- **DOMPurify**: For sanitizing the rendered HTML (no data transmission)
 
 ## Data Sharing
 

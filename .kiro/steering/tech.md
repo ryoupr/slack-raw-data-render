@@ -14,6 +14,7 @@
 ## ライブラリ（npm からバンドル）
 - **[marked](https://github.com/markedjs/marked)** v15: Markdown パーサー
 - **[Prism.js](https://prismjs.com/)**: シンタックスハイライト（テーマ CSS も `prismjs/themes/prism.css` から import）
+- **[DOMPurify](https://github.com/cure53/DOMPurify)**: marked が生成した HTML のサニタイズ（`sanitizeHTML` から呼ぶ）
 
 ## テスト
 - **fast-check**: プロパティベーステスト
