@@ -7,9 +7,11 @@
 ├── README.md                    # プロジェクト概要
 ├── CLAUDE.md                    # エージェント向け指示
 ├── PRIVACY.md                   # プライバシーポリシー（Chrome Web Store 用）
+├── CONTRIBUTING.md              # ブランチ運用・リリース手順・必要な Secrets
+├── .github/workflows/           # ci.yml（ビルド検証）/ release.yml（リリース・ストア提出）
 ├── .gitignore                   # Git除外設定
 ├── package.json                 # 拡張機能名・バージョン・説明・npmスクリプト
-├── wxt.config.ts                # WXT設定（manifest の name / permissions）
+├── wxt.config.ts                # WXT設定（manifest の name / description / default_locale / permissions）
 ├── tsconfig.json                # .wxt/tsconfig.json を継承
 ├── entrypoints/                 # エントリーポイント（manifest に自動反映）
 │   ├── content/

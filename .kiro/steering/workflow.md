@@ -35,19 +35,16 @@
 ```
 - `public/icon/` のアイコンは WXT が自動検出して manifest の `icons` に設定する
 
-### Phase 4: ビルド & 公開
-```bash
-# Chrome Web Store用ZIPを作成 → .output/slack-markdown-renderer-{version}-chrome.zip
-npm run zip
-```
-- 生成されたZIPを Chrome Web Store Developer Dashboard にアップロード
-- URL: https://chrome.google.com/webstore/devconsole/
+### Phase 4: ブランチ運用
+- 作業は `feature/*` ブランチで行い、`develop` へ PR を出す（`ci.yml` がビルド検証）
+- `main` / `develop` へ直接 push しない
+- 詳細: `CONTRIBUTING.md`
 
-### Phase 5: バージョンアップ
-1. `npm version patch`（または `minor` / `major`）で `package.json` の `version` をインクリメント
-2. 変更を実装・テスト
-3. `npm run zip` で再ビルド
-4. Developer Dashboard で新バージョンをアップロード
+### Phase 5: リリース（GitHub Actions で自動化）
+1. `develop` → `main` のリリース PR で `npm version patch --no-git-tag-version`（または `minor` / `major`）を実行し、`package.json` の `version` を上げる
+2. マージすると `release.yml` が ZIP 作成 → GitHub Release（タグ `v{version}`）→ Chrome Web Store への提出を行う
+3. ストア審査中（`PENDING_REVIEW`）は `develop` → `main` の PR をマージしない（`store-review-guard` がブロック）
+- 手動で公開する場合は `npm run zip` → `.output/slack-markdown-renderer-{version}-chrome.zip` を https://chrome.google.com/webstore/devconsole/ にアップロード
 
 ## Agent向け指示
 
@@ -59,7 +56,7 @@ npm run zip
 3. 外部ライブラリが必要な場合は `npm install` で追加（パッケージ名を `npm view` で確認してから）
 4. `npm run compile`・`npm run build`・`npm test` が通ることを確認
 5. 実装完了後、動作確認手順（`npm run dev`、または `.output/chrome-mv3/` の読み込み）をユーザーに提示
-6. リリース時は `npm version` → `npm run zip`
+6. PR は `develop` 向けに作る。リリースは `develop` → `main` の PR で `version` を上げる（Phase 5）
 
 ### 自律実行の判断基準
 - **確認不要**: コード実装、スタイル実装、wxt.config.ts 編集、npm パッケージ追加 → そのまま進める
