@@ -83,6 +83,10 @@ npm install   # postinstall で wxt prepare も実行される
 ├── run-all-tests.cjs            # テストランナー
 ├── test-property-based.cjs      # プロパティベーステスト
 ├── test-styling.cjs             # スタイリングテスト
+├── .github/workflows/
+│   ├── ci.yml                   # PR・develop push のビルド検証、ストア審査中ガード
+│   └── release.yml              # main push / 手動実行でリリースとストア提出
+├── CONTRIBUTING.md              # ブランチ運用・リリース手順・必要な Secrets
 └── PRIVACY.md                   # プライバシーポリシー
 ```
 
@@ -96,11 +100,15 @@ npm install   # postinstall で wxt prepare も実行される
 ./script/resize-to-1280x800.sh screenshot/001.png
 ```
 
+## ブランチ運用
+
+- `feature/*` → `develop`: PR で結合・ビルド検証（`ci.yml` のみ、リリースなし）
+- `develop` → `main`: リリース PR（`version` を上げるのはここだけ）
+- `main` への push: `release.yml` がビルド → GitHub Release 作成 → Chrome Web Store への提出を行う
+- ストア審査中（`PENDING_REVIEW`）は、`develop` → `main` の PR をマージできない（`store-review-guard` がブロック）
+
 ## リリース
 
-```bash
-npm version patch   # minor / major
-npm run zip         # .output/slack-markdown-renderer-{version}-chrome.zip
-```
+`develop` → `main` のリリース PR で `package.json` の `version` を上げてマージすると、GitHub Release の作成と Chrome Web Store への提出が自動で行われます。`package.json` を変えずにリリースしたいときは、Actions の `release` ワークフローを main で手動実行します。詳細は [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
-生成された ZIP を [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/) にアップロードします。
+手動でリリースする場合は、`npm run zip` で作った `.output/slack-markdown-renderer-{version}-chrome.zip` を [Chrome Web Store Developer Dashboard](https://chrome.google.com/webstore/devconsole/) にアップロードします。
