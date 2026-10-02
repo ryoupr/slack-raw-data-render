@@ -12,7 +12,7 @@
 ## 開発手順
 
 ```bash
-npm install
+npm ci   # package-lock.json どおりに依存を入れる（依存を追加するときは npm install <pkg>）
 
 # 開発モード（ホットリロード付き）
 npm run dev
@@ -48,10 +48,13 @@ npm run zip
 CI の定義は [.github/workflows/ci.yml](.github/workflows/ci.yml) と [.github/workflows/release.yml](.github/workflows/release.yml) を正とします。概要は以下のとおりです。
 
 - `ci.yml`: `develop` / `main` への Pull Request と `develop` への push で、ビルド検証（`npm ci` → `npm run compile` → `npm run zip`）だけを行います。リリースは行いません。
+  - `npm test` は CI で実行していません。プロパティベーステスト（Property 3 / 7）が乱数の入力によって失敗することがあり、CI が不安定になるためです。テストを直したら `ci.yml` に追加してください。PR を出す前に手元で `npm test` を実行してください。
 - `ci.yml` の `store-review-guard`: `main` への Pull Request のときだけ実行し、ストア審査中（`PENDING_REVIEW`）なら失敗させてマージをブロックします。マージを実際に止めるには、`main` のブランチ保護でこのジョブを required check に指定してください。
 - `release.yml`: `main` への push のうち `package.json` または `wxt.config.ts` の変更を含むもの、または `main` での手動実行で起動します。
   - `package.json` の `version` に対応するタグ（`v{version}`）が既にある場合は、ビルド・Release 作成・ストア提出をすべてスキップします。
   - ストア提出の前に審査状態を確認し、審査中（`PENDING_REVIEW`）なら提出だけスキップします（GitHub Release の作成は続けます）。
+  - 提出がスキップされた場合や失敗した場合も、タグ `v{version}` は作られるため、再実行してもストアには提出されません。GitHub Release に添付された ZIP を [Developer Dashboard](https://chrome.google.com/webstore/devconsole/) へ手動でアップロードしてください。
+  - 同時に複数のリリースが走らないよう、`concurrency` で直列化しています。
 
 ## 必要な Secrets（名前のみ）
 
@@ -63,5 +66,6 @@ CI の定義は [.github/workflows/ci.yml](.github/workflows/ci.yml) と [.githu
 | `CHROME_PUBLISHER_ID` | Chrome Web Store のパブリッシャー ID |
 | `CHROME_EXTENSION_ID` | Chrome Web Store の拡張機能 ID |
 
-- `CWS_SERVICE_ACCOUNT_JSON` が未設定の場合は、ストア提出のステップだけスキップされます（GitHub Release は作成されます）。
+- 3つのどれかが未設定の場合は、ストア提出のステップだけスキップされます（GitHub Release は作成されます）。
+- Secrets はジョブ全体の環境変数には置かず、使う step にだけ渡しています（依存パッケージのスクリプトやサードパーティ Action に鍵を渡さないため）。
 - API の仕様: https://developer.chrome.com/docs/webstore/using-api

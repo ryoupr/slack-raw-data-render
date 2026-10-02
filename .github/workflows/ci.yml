@@ -38,8 +38,7 @@ jobs:
     # Secrets 未設定時は判定不可のため警告のみで通過させる（fail-open）。
     if: github.base_ref == 'main'
     runs-on: ubuntu-latest
-    env:
-      CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+    # Secrets はジョブ全体の env に置かず、使う step にだけ渡す
     steps:
       - name: Check Chrome Web Store review status
         env:

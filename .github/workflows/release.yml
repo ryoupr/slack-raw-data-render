@@ -6,10 +6,10 @@ name: release
 # すなわち develop → main のマージ時だけリリースされる。
 # feature → develop のPR/ develop push では ci.yml がビルド検証のみ行う。
 # Chrome Web Store への提出はサービスアカウント方式（API v2）で行う。
-# 必要な Secrets（CWS_SERVICE_ACCOUNT_JSON / CHROME_PUBLISHER_ID）が
-# 未設定の間はスキップされる。API v1 系の Secrets（CHROME_CLIENT_* /
-# CHROME_REFRESH_TOKEN）は v1 廃止（2026-10-15）までの移行期間用で、
-# 本ワークフローでは使用しない。
+# 必要な Secrets（CWS_SERVICE_ACCOUNT_JSON / CHROME_PUBLISHER_ID /
+# CHROME_EXTENSION_ID）のどれかが未設定の間は、ストア提出だけスキップする。
+# 提出がスキップ・失敗してもタグは作られるため、再実行では提出されない。
+# その場合は ZIP（GitHub Release に添付）を Developer Dashboard へ手動でアップロードする。
 # 移植元: ryoupr/box-note-downloader の .github/workflows/release.yml
 # ref: https://developer.chrome.com/docs/webstore/using-api
 on:
@@ -25,14 +25,17 @@ on:
 permissions:
   contents: write
 
+# main への連続 push と手動実行が重なっても、同じ version を二重にリリースしない
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    # Secrets は if: で直接参照できないため job 環境変数経由で参照する。
-    # 未設定の Secret は空文字になることを利用して submit の要否を判定する。
-    env:
-      CWS_SERVICE_ACCOUNT_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+    # Secrets はジョブ全体の env に置かない（npm ci のライフサイクルスクリプトや
+    # サードパーティ Action に鍵を渡さないため）。使う step にだけ渡す。
     steps:
       - uses: actions/checkout@v4
         with:
@@ -69,8 +72,23 @@ jobs:
           generate_release_notes: true
           files: .output/*.zip
 
+      # Secrets は if: で直接参照できないため、設定の有無だけを step output にする
+      - id: secrets
+        if: steps.check.outputs.exists == 'false'
+        env:
+          SA_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
+          PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
+          EXTENSION_ID: ${{ secrets.CHROME_EXTENSION_ID }}
+        run: |
+          if [ -n "${SA_JSON:-}" ] && [ -n "${PUBLISHER_ID:-}" ] && [ -n "${EXTENSION_ID:-}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Store credentials are not fully configured, skipping store submission'
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Submit to Chrome Web Store (API v2)
-        if: steps.check.outputs.exists == 'false' && env.CWS_SERVICE_ACCOUNT_JSON != ''
+        if: steps.check.outputs.exists == 'false' && steps.secrets.outputs.present == 'true'
         env:
           SA_JSON: ${{ secrets.CWS_SERVICE_ACCOUNT_JSON }}
           PUBLISHER_ID: ${{ secrets.CHROME_PUBLISHER_ID }}
@@ -115,7 +133,7 @@ jobs:
             exit 1
           fi
 
-          # v2 API: 審査状態確認 → ZIP アップロード → 状態確認 → 公開申請
+          # v2 API: 審査状態確認 → ZIP アップロード（uploadState を確認）→ 公開申請
           # 審査中（PENDING_REVIEW）の場合はストア提出のみスキップする。
           # GitHub Release 作成は継続するため、ここでは exit 0 で正常終了させる。
           # fetchStatus の取得に失敗した場合は空扱いとし、従来通り upload へ進む（安全側）。
