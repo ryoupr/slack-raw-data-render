@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <!-- WXT はこの title を manifest の action.default_title に設定する -->
+  <title>Slack Markdown Renderer</title>
   <style>
     body {
       width: 240px;
@@ -44,6 +46,6 @@
     <input type="range" id="line-height" min="1.0" max="2.0" step="0.1" value="1.5">
     <span class="value" id="lh-value">1.5</span>
   </div>
-  <script src="popup.js"></script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

@@ -17,7 +17,7 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
   const { marked } = require('marked');
   global.marked = marked;
   
-  // Define critical functions directly (extracted from content-script.js)
+  // Define critical functions directly (extracted from entrypoints/content/index.js)
   global.isMarkdownExtension = function(extension) {
     if (!extension) return false;
     const markdownExtensions = ['md', 'markdown', 'mdown', 'mkd', 'mkdn'];
@@ -152,8 +152,8 @@ function setupTestEnvironment(url = 'https://files.slack.com/files-pri/test-file
     return content;
   };
   
-  // Note: content-script.js functions are defined above as test-safe versions.
-  // The IIFE-wrapped content-script.js cannot be safely loaded in Node.js.
+  // Note: entrypoints/content/index.js functions are defined above as test-safe versions.
+  // The WXT content script (entrypoints/content/index.js) cannot be safely loaded in Node.js.
 }
 
 async function runPropertyBasedTests() {

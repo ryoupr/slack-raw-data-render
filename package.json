@@ -1,16 +1,31 @@
 {
   "name": "slack-markdown-renderer",
   "version": "1.1.0",
-  "description": "Chrome extension to render Markdown content in Slack RAW file pages",
+  "description": "Renders Markdown content in Slack RAW file pages",
   "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "test": "node run-all-tests.js",
-    "test:property": "node test-property-based.js",
-    "test:styling": "node test-styling.js"
+    "dev": "wxt",
+    "build": "wxt build",
+    "zip": "wxt zip",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare",
+    "test": "node run-all-tests.cjs",
+    "test:property": "node test-property-based.cjs",
+    "test:styling": "node test-styling.cjs"
+  },
+  "dependencies": {
+    "marked": "^15.0.12",
+    "prismjs": "^1.30.0"
   },
   "devDependencies": {
     "fast-check": "^4.5.2",
-    "jsdom": "^23.0.0"
+    "jsdom": "^23.0.0",
+    "typescript": "^5.9.3",
+    "wxt": "^0.21.4"
   },
   "keywords": [
     "chrome-extension",

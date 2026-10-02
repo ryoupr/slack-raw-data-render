@@ -3,7 +3,6 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-package-lock.json
 
 # Chrome Extension build artifacts
 dist/
@@ -12,9 +11,12 @@ build/
 *.pem
 *.zip
 
+# WXT
+.output/
+.wxt/
+web-ext.config.ts
+
 # Development and testing files
-test-*.js
-run-all-tests.js
 coverage/
 .nyc_output/
 *.test.js
@@ -125,6 +127,7 @@ Desktop.ini
 # TernJS port file
 .tern-port
 
-# Kiro / daily notes
-.kiro/
+# Kiro / daily notes（開発フローの steering だけは共有する）
+.kiro/*
+!.kiro/steering/
 daily_notes/

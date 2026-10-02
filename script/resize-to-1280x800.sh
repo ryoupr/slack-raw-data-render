@@ -97,14 +97,23 @@ if [ -n "$OUTPUT_DIR" ]; then
     fi
 fi
 
-# ImageMagickの存在確認
-if ! command -v convert &> /dev/null; then
-    print_error "ImageMagickのconvertコマンドが見つかりません。"
+# ImageMagickの存在確認（magick優先、convertフォールバック）
+MAGICK_CMD=""
+IDENTIFY_CMD=""
+if command -v magick &> /dev/null; then
+    MAGICK_CMD="magick"
+    IDENTIFY_CMD="magick identify"
+elif command -v convert &> /dev/null; then
+    MAGICK_CMD="convert"
+    IDENTIFY_CMD="identify"
+else
+    print_error "ImageMagickが見つかりません。"
     print_info "インストール方法:"
     print_info "  macOS: brew install imagemagick"
     print_info "  Ubuntu: sudo apt-get install imagemagick"
     exit 1
 fi
+print_info "使用コマンド: $MAGICK_CMD"
 
 # 画像ファイルかどうかを判定する関数
 is_image_file() {
@@ -199,14 +208,14 @@ for INPUT_FILE in "${INPUT_FILES[@]}"; do
     fi
 
     # 元画像の情報を取得
-    ORIGINAL_INFO=$(identify "$INPUT_FILE" 2>/dev/null)
+    ORIGINAL_INFO=$($IDENTIFY_CMD "$INPUT_FILE" 2>/dev/null)
     if [ $? -eq 0 ]; then
         ORIGINAL_SIZE=$(echo "$ORIGINAL_INFO" | awk '{print $3}')
         print_info "  元画像サイズ: $ORIGINAL_SIZE"
         
         # サイズを分解
         ORIGINAL_WIDTH=$(echo "$ORIGINAL_SIZE" | cut -d'x' -f1)
-        ORIGINAL_HEIGHT=$(echo "$ORIGINAL_SIZE" | cut -d'x' -f2)
+        ORIGINAL_HEIGHT=$(echo "$ORIGINAL_SIZE" | cut -d'x' -f2 | cut -d'+' -f1)
         
         # 元画像と目標サイズの比較
         if [ "$ORIGINAL_WIDTH" -gt 1280 ] || [ "$ORIGINAL_HEIGHT" -gt 800 ]; then
@@ -219,7 +228,7 @@ for INPUT_FILE in "${INPUT_FILES[@]}"; do
     fi
     
     # ImageMagickで画像をリサイズ
-    if convert "$INPUT_FILE" \
+    if $MAGICK_CMD "$INPUT_FILE" \
         -resize 1280x800 \
         -background transparent \
         -gravity center \
@@ -230,12 +239,10 @@ for INPUT_FILE in "${INPUT_FILES[@]}"; do
         ((SUCCESS_COUNT++))
         
         # 出力ファイルの情報を表示
-        if command -v identify &> /dev/null; then
-            OUTPUT_INFO=$(identify "$OUTPUT_FILE" 2>/dev/null)
-            if [ $? -eq 0 ]; then
-                FILE_SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
-                print_info "  ファイルサイズ: $FILE_SIZE"
-            fi
+        OUTPUT_INFO=$($IDENTIFY_CMD "$OUTPUT_FILE" 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            FILE_SIZE=$(ls -lh "$OUTPUT_FILE" | awk '{print $5}')
+            print_info "  ファイルサイズ: $FILE_SIZE"
         fi
         
     else

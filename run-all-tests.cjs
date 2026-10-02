@@ -3,8 +3,8 @@
  * Runs all available tests to validate core functionality
  */
 
-const { runPropertyBasedTests } = require('./test-property-based');
-const { runStylingTests } = require('./test-styling');
+const { runPropertyBasedTests } = require('./test-property-based.cjs');
+const { runStylingTests } = require('./test-styling.cjs');
 
 async function runAllTests() {
   console.log('🚀 Running Complete Test Suite for Slack Markdown Renderer\n');
