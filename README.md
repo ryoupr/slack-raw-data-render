@@ -31,6 +31,7 @@ UI 文言は `public/_locales/<locale>/messages.json`（[chrome.i18n](https://de
 - Content Scripts（`document_idle`で実行）
 - Marked.js（Markdownパーサー）
 - Prism.js（シンタックスハイライト）
+- DOMPurify（生成した HTML のサニタイズ）
 - プロパティベーステスト（fast-check）
 
 開発フローは [develop-chrome-extension](https://github.com/ryoupr/develop-chrome-extension) テンプレートに準拠しています（詳細は `.kiro/steering/workflow.md`）。

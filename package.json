@@ -18,6 +18,7 @@
     "test:styling": "node test-styling.cjs"
   },
   "dependencies": {
+    "dompurify": "^3.4.16",
     "marked": "^15.0.12",
     "prismjs": "^1.30.0"
   },
