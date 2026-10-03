@@ -35,9 +35,13 @@ export default defineContentScript({
    */
   function escapeHTML(str) {
     if (typeof str !== 'string') return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+    // 属性値の中で使われても安全なように、引用符もエスケープする
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   const SANITIZE_CONFIG = {
@@ -1940,16 +1944,23 @@ export default defineContentScript({
       h.id = 'heading-' + i;
     });
 
-    // Build TOC HTML
-    const tocItems = Array.from(headings).map((h, i) => {
-      const level = parseInt(h.tagName[1]);
-      const text = escapeHTML(h.textContent.trim());
-      return `<a href="#heading-${i}" class="toc-item toc-h${level}" title="${text}">${text}</a>`;
-    }).join('');
-
+    // 見出しのテキストは Markdown 由来（信頼できない入力）なので、HTML 文字列にせず DOM API で組み立てる
     const toc = document.createElement('nav');
     toc.className = 'slack-markdown-toc';
-    toc.innerHTML = `<div class="toc-title">${escapeHTML(t('tocTitle'))}</div>${tocItems}`;
+    const tocTitle = document.createElement('div');
+    tocTitle.className = 'toc-title';
+    tocTitle.textContent = t('tocTitle');
+    toc.appendChild(tocTitle);
+    headings.forEach((h, i) => {
+      const level = parseInt(h.tagName[1]);
+      const text = h.textContent.trim();
+      const item = document.createElement('a');
+      item.href = `#heading-${i}`;
+      item.className = `toc-item toc-h${level}`;
+      item.title = text;
+      item.textContent = text;
+      toc.appendChild(item);
+    });
     document.body.appendChild(toc);
 
     // Toggle button
